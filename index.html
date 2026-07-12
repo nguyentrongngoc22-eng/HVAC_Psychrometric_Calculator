@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>HVAC Psychrometric Calculator v0.8</title>
+<style>
+:root{
+  --bg:#f3f6fb;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#dbe3ee;
+  --accent:#2563eb;--ok:#047857;--warn:#b45309;--bad:#b91c1c
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:820px;margin:auto;padding:16px 14px 34px}
+.header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+h1{font-size:24px;line-height:1.25;margin:4px 0 6px}
+.sub{font-size:14px;color:var(--muted);line-height:1.5}
+.lang{width:155px;flex:0 0 155px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(15,23,42,.04)}
+.input-line{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.8fr);gap:10px;align-items:end;margin-bottom:12px}
+label{display:block;font-size:13px;font-weight:750;margin-bottom:6px}
+select,input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:var(--text);font-size:16px}
+select:focus,input:focus{outline:2px solid #93c5fd;border-color:var(--accent)}
+.unit{font-size:12px;color:var(--muted);margin-top:5px;min-height:18px}
+button{width:100%;border:0;border-radius:12px;padding:13px 16px;background:var(--accent);color:#fff;font-size:16px;font-weight:800;cursor:pointer}
+button:active{transform:translateY(1px)}
+.error{display:none;background:#fef2f2;color:var(--bad);border:1px solid #fecaca;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:14px;line-height:1.45}
+.result-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.metric{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfdff}
+.metric .k{font-size:12px;color:var(--muted);margin-bottom:5px}
+.metric .v{font-size:20px;font-weight:800}
+.metric .u{font-size:11px;color:var(--muted);margin-left:3px}
+.status{margin-top:12px;padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.45}
+.status.ok{background:#ecfdf5;color:var(--ok);border:1px solid #a7f3d0}
+.status.warn{background:#fff7ed;color:var(--warn);border:1px solid #fed7aa}
+.status.bad{background:#fef2f2;color:var(--bad);border:1px solid #fecaca}
+.validation-box{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:12px;background:#f8fafc}
+.validation-title{font-size:14px;font-weight:800;margin-bottom:7px}
+.validation-list{margin:0;padding-left:20px;font-size:13px;line-height:1.55}
+.validation-list li.ok{color:var(--ok)}
+.validation-list li.warn{color:var(--warn)}
+.validation-list li.bad{color:var(--bad)}
+.footer{font-size:12px;color:var(--muted);line-height:1.55}
+@media(min-width:700px){.result-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){
+  .header{display:block}.lang{width:100%;margin-top:10px}.input-line{grid-template-columns:1fr 1fr}
+}
+
+.chart-wrap{position:relative;width:100%;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:#fff}
+#psychChart{display:block;width:100%;height:auto;touch-action:manipulation}
+.chart-toolbar{display:flex;flex-wrap:wrap;gap:8px 14px;margin:0 0 10px;font-size:13px;color:var(--muted)}
+.chart-toolbar label{display:flex;align-items:center;gap:6px;margin:0;font-weight:600}
+.chart-toolbar input{width:auto;padding:0}
+.chart-tip{position:absolute;display:none;pointer-events:none;z-index:3;min-width:190px;max-width:250px;background:rgba(15,23,42,.95);color:white;border-radius:10px;padding:9px 10px;font-size:12px;line-height:1.45;box-shadow:0 8px 24px rgba(15,23,42,.25)}
+.chart-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45}
+.state-grid{display:grid;grid-template-columns:1fr;gap:14px}.state-box{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fbfdff}.state-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.state-title{font-size:16px;font-weight:850}.badge{font-size:12px;font-weight:800;padding:4px 9px;border-radius:999px}.badge.a{background:#dbeafe;color:#1d4ed8}.badge.b{background:#fee2e2;color:#b91c1c}.delta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.delta-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}.delta-card .k{font-size:12px;color:var(--muted);margin-bottom:5px}.delta-card .v{font-size:19px;font-weight:850}.process{margin-top:12px;padding:12px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;font-size:14px;line-height:1.5}@media(min-width:720px){.state-grid{grid-template-columns:1fr 1fr}.delta-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+.load-input-grid{display:grid;grid-template-columns:1.2fr .8fr 1fr;gap:10px;align-items:end}
+.load-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.load-card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fbfdff}
+.load-card .k{font-size:12px;color:var(--muted);margin-bottom:5px}.load-card .v{font-size:20px;font-weight:850}.load-card .u{font-size:11px;color:var(--muted);margin-left:3px}
+.load-note{margin-top:12px;padding:12px;border-radius:12px;background:#f8fafc;border:1px solid var(--line);font-size:13px;line-height:1.5;color:#334155}
+@media(min-width:720px){.load-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.load-input-grid{grid-template-columns:1fr 1fr}.load-input-grid>div:first-child{grid-column:1/-1}}
+</style>
+
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="HVAC Calc">
+<meta name="application-name" content="HVAC Calc">
+
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div>
+      <h1 id="title">Máy tính không khí ẩm HVAC</h1>
+      <div id="subtitle" class="sub">Chọn bất kỳ 2 thông số độc lập, nhập giá trị và tính toàn bộ trạng thái không khí.</div>
+    </div>
+    <select id="language" class="lang" aria-label="Language">
+      <option value="vi">Tiếng Việt</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
+  <div class="card">
+    <div class="state-grid">
+      <div class="state-box">
+        <div class="state-head"><div class="state-title" id="stateATitle">Trạng thái A</div><span class="badge a">A</span></div>
+        <div class="input-line"><div><label id="labelSelectA1" for="propA1">Thông số thứ nhất</label><select id="propA1"></select></div><div><label id="labelValueA1" for="valueA1">Giá trị</label><input id="valueA1" type="number" step="0.01" inputmode="decimal"><div id="unitA1" class="unit"></div></div></div>
+        <div class="input-line"><div><label id="labelSelectA2" for="propA2">Thông số thứ hai</label><select id="propA2"></select></div><div><label id="labelValueA2" for="valueA2">Giá trị</label><input id="valueA2" type="number" step="0.01" inputmode="decimal"><div id="unitA2" class="unit"></div></div></div>
+      </div>
+      <div class="state-box">
+        <div class="state-head"><div class="state-title" id="stateBTitle">Trạng thái B</div><span class="badge b">B</span></div>
+        <div class="input-line"><div><label id="labelSelectB1" for="propB1">Thông số thứ nhất</label><select id="propB1"></select></div><div><label id="labelValueB1" for="valueB1">Giá trị</label><input id="valueB1" type="number" step="0.01" inputmode="decimal"><div id="unitB1" class="unit"></div></div></div>
+        <div class="input-line"><div><label id="labelSelectB2" for="propB2">Thông số thứ hai</label><select id="propB2"></select></div><div><label id="labelValueB2" for="valueB2">Giá trị</label><input id="valueB2" type="number" step="0.01" inputmode="decimal"><div id="unitB2" class="unit"></div></div></div>
+      </div>
+    </div>
+    <div style="margin:14px 0 12px"><label id="pressureLabel" for="pressure">Áp suất khí quyển</label><input id="pressure" type="number" value="101.325" step="0.001" inputmode="decimal"><div id="pressureUnit" class="unit">kPa — giá trị mặc định gần mực nước biển</div></div>
+    <div class="load-input-grid" style="margin-bottom:14px">
+      <div><label id="airflowLabel" for="airflow">Lưu lượng gió</label><input id="airflow" type="number" value="10000" min="0" step="10" inputmode="decimal"><div id="airflowNote" class="unit">Lưu lượng thể tích tại trạng thái được chọn</div></div>
+      <div><label id="airflowUnitLabel" for="airflowUnit">Đơn vị</label><select id="airflowUnit"><option value="cmh">CMH</option><option value="m3s">m³/s</option></select></div>
+      <div><label id="airflowBasisLabel" for="airflowBasis">Lưu lượng đo tại</label><select id="airflowBasis"><option value="A">Trạng thái A</option><option value="B">Trạng thái B</option></select></div>
+    </div>
+    <button id="calc">Tính toán & So sánh</button><div id="error" class="error"></div>
+    <div id="validationBox" class="validation-box">
+      <div id="validationTitle" class="validation-title">Kiểm tra dữ liệu</div>
+      <ul id="validationList" class="validation-list"></ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 id="resultTitle" style="font-size:18px;margin:0 0 12px">Kết quả hai trạng thái</h2>
+    <div class="state-grid">
+      <div><div class="state-title" id="resultATitle" style="margin-bottom:10px">Trạng thái A</div><div id="resultsA" class="result-grid"></div><div id="statusA" class="status ok"></div></div>
+      <div><div class="state-title" id="resultBTitle" style="margin-bottom:10px">Trạng thái B</div><div id="resultsB" class="result-grid"></div><div id="statusB" class="status ok"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2 id="compareTitle" style="font-size:18px;margin:0 0 12px">So sánh A → B</h2>
+    <div id="deltaResults" class="delta-grid"></div>
+    <div id="processText" class="process"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="loadTitle" style="font-size:18px;margin:0 0 12px">Tải nhiệt theo lưu lượng gió A → B</h2>
+    <div id="loadResults" class="load-grid"></div>
+    <div id="loadNote" class="load-note"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="chartTitle" style="font-size:18px;margin:0 0 10px">Psychrometric Chart</h2>
+    <div class="chart-toolbar">
+      <label><input id="showRH" type="checkbox" checked> <span id="showRHText">Đường RH</span></label>
+      <label><input id="showH" type="checkbox" checked> <span id="showHText">Đường Enthalpy</span></label>
+      <label><input id="showRefs" type="checkbox" checked> <span id="showRefsText">Đường tham chiếu</span></label>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="psychChart" width="900" height="560"></canvas>
+      <div id="chartTip" class="chart-tip"></div>
+    </div>
+    <div id="chartNote" class="chart-note">Chạm vào điểm A hoặc B để xem các thông số.</div>
+  </div>
+
+  <div id="footer" class="card footer"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const i18n={vi:{title:"Máy tính không khí ẩm HVAC v0.8",subtitle:"Nhập hai trạng thái, tính tải lạnh và kiểm tra tự động tính hợp lệ của dữ liệu.",stateA:"Trạng thái A",stateB:"Trạng thái B",select1:"Thông số thứ nhất",select2:"Thông số thứ hai",value:"Giá trị",pressure:"Áp suất khí quyển",pressureUnit:"kPa — giá trị mặc định gần mực nước biển",airflow:"Lưu lượng gió",airflowNote:"Lưu lượng thể tích tại trạng thái được chọn",airflowUnit:"Đơn vị",airflowBasis:"Lưu lượng đo tại",basisA:"Trạng thái A",basisB:"Trạng thái B",loadTitle:"Tải nhiệt theo lưu lượng gió A → B",loadLabels:{mda:"Lưu lượng không khí khô",total:"Tải tổng",sensible:"Tải hiện",latent:"Tải ẩn",shr:"SHR",condensate:"Nước ngưng"},loadProcess:(qt,qs,ql,cond)=>`<strong>Quy ước dấu:</strong> Giá trị dương là công suất cần lấy ra khi đi từ A → B; giá trị âm thể hiện quá trình gia nhiệt/tạo ẩm. ${cond>0?`Hệ thống tách khoảng <strong>${cond.toFixed(2)} kg/h</strong> nước.`:"Không phát sinh nước ngưng theo chiều A → B."}`,calc:"Tính toán & So sánh",results:"Kết quả hai trạng thái",compare:"So sánh A → B",chartTitle:"Biểu đồ không khí ẩm",showRH:"Đường RH",showH:"Đường Enthalpy",showRefs:"Đường tham chiếu",chartNote:"Chạm vào điểm A hoặc B để xem các thông số.",duplicate:"Mỗi trạng thái phải dùng hai thông số khác nhau.",fill:"Vui lòng nhập đầy đủ các giá trị.",pressureErr:"Áp suất khí quyển không hợp lý.",dependent:"Cặp thông số không độc lập hoặc không xác định duy nhất trạng thái không khí.",supersat:"Trạng thái vượt quá bão hòa RH = 100%.",condensation:dp=>`Điểm sương: <strong>${dp}°C</strong>. Bề mặt thấp hơn giá trị này có nguy cơ đọng sương.`,nearSat:dp=>`Không khí gần bão hòa. Bề mặt dưới <strong>${dp}°C</strong> có nguy cơ ngưng tụ cao.`,deltaLabels:{db:"ΔDB",rh:"ΔRH",w:"ΔW",h:"Δh",dp:"ΔDP",wb:"ΔWB"},process:(dT,dW,dh)=>{let a=dT>0.05?"Gia nhiệt":dT<-0.05?"Làm lạnh":"Nhiệt độ gần như không đổi";let b=dW>0.02?"tạo ẩm":dW<-0.02?"khử ẩm":"độ chứa ẩm gần như không đổi";return `<strong>Nhận dạng quá trình:</strong> ${a} kết hợp ${b}. Enthalpy ${dh>0?"tăng":dh<0?"giảm":"gần như không đổi"}.`;},validationTitle:"Kiểm tra dữ liệu",validationOk:"Dữ liệu hợp lệ trong phạm vi HVAC thông thường.",validationMessages:{
+same:"Hai thông số trong cùng một trạng thái không được trùng nhau.",
+dependent:"Cặp thông số này phụ thuộc trực tiếp nên không xác định duy nhất trạng thái.",
+rhRange:"RH phải lớn hơn 0% và không vượt quá 100%.",
+tempRange:"Nhiệt độ nằm ngoài phạm vi ứng dụng HVAC thông thường (-30 đến 60°C).",
+wbDb:"Nhiệt độ bầu ướt WB không thể lớn hơn nhiệt độ khô DB.",
+dpDb:"Điểm sương DP không thể lớn hơn nhiệt độ khô DB.",
+negative:"Thông số độ ẩm, áp suất, thể tích hoặc mật độ không được âm.",
+pvPressure:"Áp suất hơi nước phải nhỏ hơn áp suất khí quyển.",
+stateNearSat:"Trạng thái rất gần bão hòa; sai số đo nhỏ có thể làm RH vượt 100%.",
+stateExtremeW:"Độ chứa ẩm lớn hơn 35 g/kg, cao hơn phạm vi HVAC thông thường.",
+stateExtremeH:"Enthalpy nằm ngoài phạm vi HVAC thông thường (-20 đến 150 kJ/kg).",
+airflowZero:"Lưu lượng gió bằng 0 nên tải tính được bằng 0.",
+airflowHigh:"Lưu lượng gió rất lớn; hãy kiểm tra đơn vị CMH và m³/s.",
+shrRange:"SHR nằm ngoài khoảng 0–1; quá trình có thể không phải làm lạnh–khử ẩm thông thường.",
+latentSign:"Tải ẩn và tải tổng khác dấu; hãy kiểm tra chiều quá trình A → B.",
+condMismatch:"Độ chứa ẩm giảm nhưng lượng nước ngưng bằng 0; kiểm tra lưu lượng gió.",
+identical:"Hai trạng thái gần như giống nhau nên chênh lệch và tải gần bằng 0.",
+pressureAltitude:"Áp suất khác đáng kể 101.325 kPa; kết quả đã tính theo áp suất đã nhập."
+},footer:"<strong>Version 0.8:</strong> Bổ sung kiểm tra phạm vi dữ liệu, cặp thông số phụ thuộc, trạng thái vượt bão hòa và cảnh báo kết quả tải bất thường."},en:{title:"HVAC Psychrometric Calculator v0.8",subtitle:"Enter two air states, calculate air-side load, and automatically validate all inputs and results.",stateA:"State A",stateB:"State B",select1:"First property",select2:"Second property",value:"Value",pressure:"Atmospheric pressure",pressureUnit:"kPa — default value is near sea level",airflow:"Airflow",airflowNote:"Volumetric airflow at the selected state",airflowUnit:"Unit",airflowBasis:"Airflow measured at",basisA:"State A",basisB:"State B",loadTitle:"Air-side load for process A → B",loadLabels:{mda:"Dry-air mass flow",total:"Total load",sensible:"Sensible load",latent:"Latent load",shr:"SHR",condensate:"Condensate"},loadProcess:(qt,qs,ql,cond)=>`<strong>Sign convention:</strong> Positive values are capacity removed from the air for A → B; negative values indicate heating/humidification. ${cond>0?`The process removes approximately <strong>${cond.toFixed(2)} kg/h</strong> of water.`:"No condensate is produced in the A → B direction."}`,calc:"Calculate & Compare",results:"Two-state results",compare:"Comparison A → B",chartTitle:"Psychrometric Chart",showRH:"RH curves",showH:"Enthalpy lines",showRefs:"Reference lines",chartNote:"Tap point A or B to view its properties.",duplicate:"Each state must use two different properties.",fill:"Please enter all required values.",pressureErr:"Atmospheric pressure is outside a reasonable range.",dependent:"The selected properties are not independent or do not uniquely define the air state.",supersat:"The calculated state exceeds RH = 100% saturation.",condensation:dp=>`Dew point: <strong>${dp}°C</strong>. Surfaces below this value may develop condensation.`,nearSat:dp=>`The air is close to saturation. Surfaces below <strong>${dp}°C</strong> have a high condensation risk.`,deltaLabels:{db:"ΔDB",rh:"ΔRH",w:"ΔW",h:"Δh",dp:"ΔDP",wb:"ΔWB"},process:(dT,dW,dh)=>{let a=dT>0.05?"Heating":dT<-0.05?"Cooling":"Nearly constant dry-bulb temperature";let b=dW>0.02?"humidification":dW<-0.02?"dehumidification":"nearly constant humidity ratio";return `<strong>Process identification:</strong> ${a} with ${b}. Enthalpy ${dh>0?"increases":dh<0?"decreases":"is nearly unchanged"}.`;},validationTitle:"Kiểm tra dữ liệu",validationOk:"Dữ liệu hợp lệ trong phạm vi HVAC thông thường.",validationMessages:{
+same:"Hai thông số trong cùng một trạng thái không được trùng nhau.",
+dependent:"Cặp thông số này phụ thuộc trực tiếp nên không xác định duy nhất trạng thái.",
+rhRange:"RH phải lớn hơn 0% và không vượt quá 100%.",
+tempRange:"Nhiệt độ nằm ngoài phạm vi ứng dụng HVAC thông thường (-30 đến 60°C).",
+wbDb:"Nhiệt độ bầu ướt WB không thể lớn hơn nhiệt độ khô DB.",
+dpDb:"Điểm sương DP không thể lớn hơn nhiệt độ khô DB.",
+negative:"Thông số độ ẩm, áp suất, thể tích hoặc mật độ không được âm.",
+pvPressure:"Áp suất hơi nước phải nhỏ hơn áp suất khí quyển.",
+stateNearSat:"Trạng thái rất gần bão hòa; sai số đo nhỏ có thể làm RH vượt 100%.",
+stateExtremeW:"Độ chứa ẩm lớn hơn 35 g/kg, cao hơn phạm vi HVAC thông thường.",
+stateExtremeH:"Enthalpy nằm ngoài phạm vi HVAC thông thường (-20 đến 150 kJ/kg).",
+airflowZero:"Lưu lượng gió bằng 0 nên tải tính được bằng 0.",
+airflowHigh:"Lưu lượng gió rất lớn; hãy kiểm tra đơn vị CMH và m³/s.",
+shrRange:"SHR nằm ngoài khoảng 0–1; quá trình có thể không phải làm lạnh–khử ẩm thông thường.",
+latentSign:"Tải ẩn và tải tổng khác dấu; hãy kiểm tra chiều quá trình A → B.",
+condMismatch:"Độ chứa ẩm giảm nhưng lượng nước ngưng bằng 0; kiểm tra lưu lượng gió.",
+identical:"Hai trạng thái gần như giống nhau nên chênh lệch và tải gần bằng 0.",
+pressureAltitude:"Áp suất khác đáng kể 101.325 kPa; kết quả đã tính theo áp suất đã nhập."
+},footer:"<strong>Version 0.8:</strong> Adds input-range validation, dependent-pair detection, saturation checks, and abnormal load warnings."}};
+const props={db:{vi:"Nhiệt độ khô DB",en:"Dry-bulb temperature DB",unit:"°C",def:25},wb:{vi:"Nhiệt độ bầu ướt WB",en:"Wet-bulb temperature WB",unit:"°C",def:19.5},dp:{vi:"Điểm sương DP",en:"Dew point DP",unit:"°C",def:16.7},rh:{vi:"Độ ẩm tương đối RH",en:"Relative humidity RH",unit:"%",def:60},w:{vi:"Độ chứa ẩm W",en:"Humidity ratio W",unit:"g/kg dry air",def:11.9},h:{vi:"Enthalpy h",en:"Enthalpy h",unit:"kJ/kg dry air",def:55.4},pv:{vi:"Áp suất hơi nước Pv",en:"Water vapor pressure Pv",unit:"kPa",def:1.90},v:{vi:"Thể tích riêng v",en:"Specific volume v",unit:"m³/kg dry air",def:0.858},rho:{vi:"Mật độ không khí ẩm",en:"Moist-air density",unit:"kg/m³",def:1.18},ah:{vi:"Độ ẩm tuyệt đối",en:"Absolute humidity",unit:"g/m³ moist air",def:13.8}};
+const order=["db","wb","dp","rh","w","h","pv","v","rho","ah"];let lang="vi",lastA=null,lastB=null,lastP=101.325;
+function pws(T){const K=T+273.15;let L;if(T>=0)L=-5.8002206e3/K+1.3914993-4.8640239e-2*K+4.1764768e-5*K*K-1.4452093e-8*K*K*K+6.5459673*Math.log(K);else L=-5.6745359e3/K+6.3925247-9.677843e-3*K+6.2215701e-7*K*K+2.0747825e-9*K*K*K-9.484024e-13*Math.pow(K,4)+4.1635019*Math.log(K);return Math.exp(L)/1000}
+const pvFromW=(W,P)=>P*W/(0.621945+W),wFromPv=(pv,P)=>0.621945*pv/(P-pv),hFrom=(T,W)=>1.006*T+W*(2501+1.86*T),vFrom=(T,W,P)=>0.287042*(T+273.15)*(1+1.607858*W)/P,rhFrom=(T,W,P)=>100*pvFromW(W,P)/pws(T);
+function dpFromPv(pv){let lo=-90,hi=100;for(let i=0;i<100;i++){const m=(lo+hi)/2;pws(m)>pv?hi=m:lo=m}return(lo+hi)/2}
+function wFromTwb(T,Tw,P){const Ws=wFromPv(pws(Tw),P);return((2501-2.326*Tw)*Ws-1.006*(T-Tw))/(2501+1.86*T-4.186*Tw)}
+function wbFrom(T,W,P){const dp=dpFromPv(pvFromW(W,P));let lo=Math.max(-90,dp),hi=T;for(let i=0;i<90;i++){const m=(lo+hi)/2;wFromTwb(T,m,P)>W?hi=m:lo=m}return(lo+hi)/2}
+function allValues(T,W,P){const pv=pvFromW(W,P),v=vFrom(T,W,P);return{db:T,wb:wbFrom(T,W,P),dp:dpFromPv(pv),rh:rhFrom(T,W,P),w:W*1000,h:hFrom(T,W),pv,v,rho:(1+W)/v,ah:W/v*1000}}
+function scaled(k,c,t){const s={db:20,wb:20,dp:20,rh:50,w:10,h:50,pv:2,v:.2,rho:.3,ah:10};return(c-t)/(s[k]||1)}
+function solveState(k1,t1,k2,t2,P){const starts=[[25,.012],[30,.018],[20,.008],[10,.005],[35,.025],[0,.003],[45,.035],[-10,.001]];for(const [k,t] of [[k1,t1],[k2,t2]]){if(k==='db')starts.unshift([t,.012]);if(k==='w')starts.unshift([25,Math.max(1e-7,t/1000)]);if(k==='dp')starts.unshift([Math.max(t+5,20),wFromPv(pws(t),P)])}let best=null;for(const st of starts){let T=st[0],y=Math.log(Math.max(st[1],1e-8));for(let n=0;n<100;n++){const W=Math.exp(y);if(T<-90||T>120||W>.3)break;let v;try{v=allValues(T,W,P)}catch(e){break}const f1=scaled(k1,v[k1],t1),f2=scaled(k2,v[k2],t2),norm=Math.hypot(f1,f2);if(!best||norm<best.n)best={T,W,n:norm};if(norm<1e-8)return{T,W};const dT=1e-4*Math.max(1,Math.abs(T)),dy=1e-4,vT=allValues(T+dT,W,P),vY=allValues(T,Math.exp(y+dy),P),a=(scaled(k1,vT[k1],t1)-f1)/dT,c=(scaled(k2,vT[k2],t2)-f2)/dT,b=(scaled(k1,vY[k1],t1)-f1)/dy,d=(scaled(k2,vY[k2],t2)-f2)/dy,det=a*d-b*c;if(!isFinite(det)||Math.abs(det)<1e-10)break;let sT=(-f1*d+b*f2)/det,sY=(-a*f2+c*f1)/det;sT=Math.max(-15,Math.min(15,sT));sY=Math.max(-1.5,Math.min(1.5,sY));let ok=false;for(const fac of [1,.5,.25,.1,.05]){const Tn=T+fac*sT,yn=y+fac*sY,Wn=Math.exp(yn);if(Tn<-90||Tn>120||Wn<=0||Wn>.3)continue;let nv;try{nv=allValues(Tn,Wn,P)}catch(e){continue}const nn=Math.hypot(scaled(k1,nv[k1],t1),scaled(k2,nv[k2],t2));if(nn<norm){T=Tn;y=yn;ok=true;break}}if(!ok)break}}if(best&&best.n<1e-5)return{T:best.T,W:best.W};throw new Error(i18n[lang].dependent)}
+function fmt(k,x){const d={db:2,wb:2,dp:2,rh:2,w:3,h:3,pv:4,v:4,rho:4,ah:3}[k]??2;return isFinite(x)?x.toFixed(d):'—'}
+function fillOptions(){for(const id of ['propA1','propA2','propB1','propB2']){const s=$(id),old=s.value;s.innerHTML='';for(const k of order){const o=document.createElement('option');o.value=k;o.textContent=props[k][lang];s.appendChild(o)}if(old)s.value=old}}
+function updateUnit(state,idx,reset=false){const k=$(`prop${state}${idx}`).value;$(`unit${state}${idx}`).textContent=props[k].unit;if(reset)$(`value${state}${idx}`).value=props[k].def}
+
+const dependentPairs=[
+  ['dp','pv'],['dp','w'],['dp','ah'],['pv','w'],['pv','ah'],['w','ah'],
+  ['v','rho']
+];
+function isDependentPair(k1,k2){
+  return dependentPairs.some(p=>(p[0]===k1&&p[1]===k2)||(p[0]===k2&&p[1]===k1));
+}
+function inputIssues(state,P){
+  const t=i18n[lang],m=t.validationMessages;
+  const k1=$(`prop${state}1`).value,k2=$(`prop${state}2`).value;
+  const a=parseFloat($(`value${state}1`).value),b=parseFloat($(`value${state}2`).value);
+  const pairs=[[k1,a],[k2,b]],issues=[];
+  if(k1===k2)issues.push({level:'bad',text:`${state}: ${m.same}`});
+  if(isDependentPair(k1,k2))issues.push({level:'bad',text:`${state}: ${m.dependent}`});
+  for(const [k,v] of pairs){
+    if(!isFinite(v))continue;
+    if(k==='rh'&&(v<=0||v>100))issues.push({level:'bad',text:`${state}: ${m.rhRange}`});
+    if(['db','wb','dp'].includes(k)&&(v<-30||v>60))issues.push({level:'warn',text:`${state}: ${m.tempRange}`});
+    if(['w','pv','v','rho','ah'].includes(k)&&v<0)issues.push({level:'bad',text:`${state}: ${m.negative}`});
+    if(k==='pv'&&v>=P)issues.push({level:'bad',text:`${state}: ${m.pvPressure}`});
+  }
+  const direct=Object.fromEntries(pairs);
+  if(isFinite(direct.db)&&isFinite(direct.wb)&&direct.wb>direct.db)issues.push({level:'bad',text:`${state}: ${m.wbDb}`});
+  if(isFinite(direct.db)&&isFinite(direct.dp)&&direct.dp>direct.db)issues.push({level:'bad',text:`${state}: ${m.dpDb}`});
+  return issues;
+}
+function stateIssues(label,v){
+  const m=i18n[lang].validationMessages,issues=[];
+  if(v.rh>97)issues.push({level:'warn',text:`${label}: ${m.stateNearSat}`});
+  if(v.w>35)issues.push({level:'warn',text:`${label}: ${m.stateExtremeW}`});
+  if(v.h<-20||v.h>150)issues.push({level:'warn',text:`${label}: ${m.stateExtremeH}`});
+  return issues;
+}
+function renderValidation(issues){
+  const box=$('validationList'),t=i18n[lang];
+  box.innerHTML='';
+  if(!issues.length){
+    const li=document.createElement('li');li.className='ok';li.textContent=t.validationOk;box.appendChild(li);return;
+  }
+  const seen=new Set();
+  for(const it of issues){
+    if(seen.has(it.text))continue;seen.add(it.text);
+    const li=document.createElement('li');li.className=it.level;li.textContent=it.text;box.appendChild(li);
+  }
+}
+
+function readState(state,P){const k1=$(`prop${state}1`).value,k2=$(`prop${state}2`).value,t1=parseFloat($(`value${state}1`).value),t2=parseFloat($(`value${state}2`).value);if(k1===k2)throw new Error(i18n[lang].duplicate);if(isDependentPair(k1,k2))throw new Error(i18n[lang].dependent);if(!isFinite(t1)||!isFinite(t2))throw new Error(i18n[lang].fill);const s=solveState(k1,t1,k2,t2,P),v=allValues(s.T,s.W,P);if(v.rh<=0||v.rh>100.05)throw new Error(i18n[lang].supersat);return v}
+function renderState(id,v){const b=$(id);b.innerHTML='';for(const k of order){const m=document.createElement('div');m.className='metric';m.innerHTML=`<div class="k">${props[k][lang]}</div><div><span class="v">${fmt(k,v[k])}</span><span class="u">${props[k].unit}</span></div>`;b.appendChild(m)}}
+function renderStatus(id,v){const s=$(id),dp=fmt('dp',v.dp);s.className='status '+(v.rh>90?'warn':'ok');s.innerHTML=v.rh>90?i18n[lang].nearSat(dp):i18n[lang].condensation(dp)}
+function renderDelta(a,b){const deltas={db:b.db-a.db,rh:b.rh-a.rh,w:b.w-a.w,h:b.h-a.h,dp:b.dp-a.dp,wb:b.wb-a.wb},box=$('deltaResults');box.innerHTML='';for(const k of ['db','rh','w','h','dp','wb']){const unit=props[k].unit;const d=document.createElement('div');d.className='delta-card';const sign=deltas[k]>0?'+':'';d.innerHTML=`<div class="k">${i18n[lang].deltaLabels[k]}</div><div><span class="v">${sign}${fmt(k,deltas[k])}</span><span class="u">${unit}</span></div>`;box.appendChild(d)}$('processText').innerHTML=i18n[lang].process(deltas.db,deltas.w,deltas.h)}
+function renderLoad(a,b){
+  const t=i18n[lang],flow=parseFloat($('airflow').value);
+  if(!isFinite(flow)||flow<0)throw new Error(t.fill);
+  const Vdot=$('airflowUnit').value==='cmh'?flow/3600:flow;
+  const basis=$('airflowBasis').value==='A'?a:b;
+  const mda=Vdot/basis.v;
+  const WA=a.w/1000,WB=b.w/1000,Wavg=(WA+WB)/2;
+  const qTotal=mda*(a.h-b.h);
+  const qSensible=mda*(1.006+1.86*Wavg)*(a.db-b.db);
+  const qLatent=qTotal-qSensible;
+  const shr=Math.abs(qTotal)>1e-9&&qSensible*qTotal>0?qSensible/qTotal:NaN;
+  const condensate=Math.max(0,mda*(WA-WB)*3600);
+  const vals=[
+    ['mda',mda,'kg dry air/s',3],['total',qTotal,'kW',2],['sensible',qSensible,'kW',2],
+    ['latent',qLatent,'kW',2],['shr',shr,'—',3],['condensate',condensate,'kg/h',2]
+  ];
+  const box=$('loadResults');box.innerHTML='';
+  for(const [k,v,u,d] of vals){const el=document.createElement('div');el.className='load-card';el.innerHTML=`<div class="k">${t.loadLabels[k]}</div><div><span class="v">${isFinite(v)?v.toFixed(d):'N/A'}</span><span class="u">${u}</span></div>`;box.appendChild(el)}
+  $('loadNote').innerHTML=t.loadProcess(qTotal,qSensible,qLatent,condensate);
+  return {flow,Vdot,mda,qTotal,qSensible,qLatent,shr,condensate};
+}
+function applyLang(l){lang=l;document.documentElement.lang=l;const t=i18n[l];$('title').textContent=t.title;$('subtitle').textContent=t.subtitle;$('stateATitle').textContent=t.stateA;$('stateBTitle').textContent=t.stateB;$('resultATitle').textContent=t.stateA;$('resultBTitle').textContent=t.stateB;for(const s of ['A','B']){for(const i of [1,2]){$(`labelSelect${s}${i}`).textContent=i===1?t.select1:t.select2;$(`labelValue${s}${i}`).textContent=t.value}}$('pressureLabel').textContent=t.pressure;$('pressureUnit').textContent=t.pressureUnit;$('airflowLabel').textContent=t.airflow;$('airflowNote').textContent=t.airflowNote;$('airflowUnitLabel').textContent=t.airflowUnit;$('airflowBasisLabel').textContent=t.airflowBasis;$('airflowBasis').options[0].textContent=t.basisA;$('airflowBasis').options[1].textContent=t.basisB;$('loadTitle').textContent=t.loadTitle;$('calc').textContent=t.calc;$('resultTitle').textContent=t.results;$('compareTitle').textContent=t.compare;$('chartTitle').textContent=t.chartTitle;$('showRHText').textContent=t.showRH;$('showHText').textContent=t.showH;$('showRefsText').textContent=t.showRefs;$('chartNote').textContent=t.chartNote;$('footer').innerHTML=t.footer;$('validationTitle').textContent=t.validationTitle;fillOptions();for(const s of ['A','B'])for(const i of [1,2])updateUnit(s,i,false);calculate()}
+function calculate(){
+  const e=$('error');e.style.display='none';
+  const issues=[];
+  try{
+    const P=parseFloat($('pressure').value);
+    if(!isFinite(P))throw new Error(i18n[lang].fill);
+    if(P<20||P>120)throw new Error(i18n[lang].pressureErr);
+    issues.push(...inputIssues('A',P),...inputIssues('B',P));
+    const fatal=issues.some(x=>x.level==='bad');
+    if(fatal){renderValidation(issues);throw new Error(i18n[lang].dependent)}
+    lastP=P;
+    lastA=readState('A',P);lastB=readState('B',P);
+    issues.push(...stateIssues('A',lastA),...stateIssues('B',lastB));
+    if(Math.abs(P-101.325)>8)issues.push({level:'warn',text:i18n[lang].validationMessages.pressureAltitude});
+    renderState('resultsA',lastA);renderState('resultsB',lastB);
+    renderStatus('statusA',lastA);renderStatus('statusB',lastB);
+    renderDelta(lastA,lastB);
+    const load=renderLoad(lastA,lastB);
+    const m=i18n[lang].validationMessages;
+    if(load.flow===0)issues.push({level:'warn',text:m.airflowZero});
+    if(($('airflowUnit').value==='cms'&&load.flow>50)||($('airflowUnit').value==='cmh'&&load.flow>180000))issues.push({level:'warn',text:m.airflowHigh});
+    if(isFinite(load.shr)&&(load.shr<0||load.shr>1.05))issues.push({level:'warn',text:m.shrRange});
+    if(load.qLatent*load.qTotal<0)issues.push({level:'warn',text:m.latentSign});
+    if(lastA.w-lastB.w>0.05&&load.condensate<=0)issues.push({level:'warn',text:m.condMismatch});
+    if(Math.abs(lastA.db-lastB.db)<0.02&&Math.abs(lastA.w-lastB.w)<0.01)issues.push({level:'warn',text:m.identical});
+    renderValidation(issues);
+    drawChart(lastA,lastB,P);
+  }catch(err){
+    if(!$('validationList').children.length)renderValidation(issues);
+    e.textContent=err.message;e.style.display='block'
+  }
+}
+function geom(){const c=$('psychChart'),ctx=c.getContext('2d'),dpr=Math.max(1,devicePixelRatio||1),W=c.parentElement.clientWidth,H=Math.max(360,Math.min(560,W*.62));c.style.width=W+'px';c.style.height=H+'px';c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);return{c,ctx,W,H,m:{l:54,r:50,t:24,b:44}}}
+function drawChart(a,b,P){const g=geom(),{ctx,W,H,m}=g,Tmin=-10,Tmax=50,Wmax=30,x=T=>m.l+(T-Tmin)/(Tmax-Tmin)*(W-m.l-m.r),y=w=>H-m.b-w/Wmax*(H-m.t-m.b),ws=T=>{const pv=pws(T);return pv>=P?NaN:wFromPv(pv,P)*1000};ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#dbe3ee';ctx.fillStyle='#64748b';ctx.font='11px system-ui';for(let T=Tmin;T<=Tmax;T+=5){ctx.beginPath();ctx.moveTo(x(T),m.t);ctx.lineTo(x(T),H-m.b);ctx.stroke();ctx.fillText(T,x(T)-7,H-m.b+18)}for(let w=0;w<=Wmax;w+=2){ctx.beginPath();ctx.moveTo(m.l,y(w));ctx.lineTo(W-m.r,y(w));ctx.stroke();ctx.fillText(w,W-m.r+7,y(w)+4)}ctx.strokeStyle='#0f172a';ctx.beginPath();ctx.moveTo(m.l,m.t);ctx.lineTo(m.l,H-m.b);ctx.lineTo(W-m.r,H-m.b);ctx.stroke();ctx.fillStyle='#0f172a';ctx.fillText('DB (°C)',W/2-18,H-10);ctx.save();ctx.translate(W-12,H/2+28);ctx.rotate(-Math.PI/2);ctx.fillText('W (g/kg dry air)',0,0);ctx.restore();ctx.strokeStyle='#2563eb';ctx.lineWidth=2;ctx.beginPath();let st=false;for(let T=Tmin;T<=Tmax;T+=.25){const w=ws(T);if(w>=0&&w<=Wmax){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke();if($('showRH').checked)for(let rh=10;rh<=90;rh+=10){ctx.strokeStyle='rgba(37,99,235,.3)';ctx.lineWidth=1;ctx.beginPath();st=false;for(let T=Tmin;T<=Tmax;T+=.4){const pv=rh/100*pws(T),w=wFromPv(pv,P)*1000;if(w>=0&&w<=Wmax){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke()}if($('showH').checked)for(let h=10;h<=110;h+=10){ctx.strokeStyle='rgba(180,83,9,.25)';ctx.beginPath();st=false;for(let T=Tmin;T<=Tmax;T+=.5){const w=(h-1.006*T)/(2501+1.86*T)*1000;if(w>=0&&w<=Wmax&&w<=ws(T)){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke()}if(a&&b){const ax=x(a.db),ay=y(a.w),bx=x(b.db),by=y(b.w);ctx.strokeStyle='#7c3aed';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();const ang=Math.atan2(by-ay,bx-ax),len=10;ctx.fillStyle='#7c3aed';ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-len*Math.cos(ang-.45),by-len*Math.sin(ang-.45));ctx.lineTo(bx-len*Math.cos(ang+.45),by-len*Math.sin(ang+.45));ctx.closePath();ctx.fill();for(const [v,label,color] of [[a,'A','#2563eb'],[b,'B','#dc2626']]){const px=x(v.db),py=y(v.w);if($('showRefs').checked){ctx.setLineDash([5,4]);ctx.strokeStyle=color;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,H-m.b);ctx.lineTo(px,py);ctx.lineTo(m.l,py);ctx.stroke();ctx.setLineDash([])}ctx.fillStyle=color;ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.fillText(label,px-3.5,py+3.5);g.c.dataset[label+'x']=px;g.c.dataset[label+'y']=py}}}
+function tip(ev){const c=$('psychChart'),r=c.getBoundingClientRect(),sx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left,sy=(ev.touches?ev.touches[0].clientY:ev.clientY)-r.top;let chosen=null,label='';for(const L of ['A','B']){const px=parseFloat(c.dataset[L+'x']||-999),py=parseFloat(c.dataset[L+'y']||-999);if(Math.hypot(sx-px,sy-py)<30){chosen=L==='A'?lastA:lastB;label=L;break}}const t=$('chartTip');if(!chosen){t.style.display='none';return}t.innerHTML=`<strong>${label}</strong><br>DB: ${fmt('db',chosen.db)} °C<br>RH: ${fmt('rh',chosen.rh)} %<br>DP: ${fmt('dp',chosen.dp)} °C<br>WB: ${fmt('wb',chosen.wb)} °C<br>W: ${fmt('w',chosen.w)} g/kg<br>h: ${fmt('h',chosen.h)} kJ/kg`;t.style.display='block';t.style.left=Math.min(r.width-225,Math.max(8,sx+12))+'px';t.style.top=Math.max(8,sy-125)+'px'}
+for(const s of ['A','B'])for(const i of [1,2])$(`prop${s}${i}`).addEventListener('change',()=>updateUnit(s,i,true));$('language').addEventListener('change',()=>applyLang($('language').value));$('calc').addEventListener('click',calculate);for(const id of ['airflow','airflowUnit','airflowBasis'])$(id).addEventListener('change',calculate);$('psychChart').addEventListener('click',tip);$('psychChart').addEventListener('touchstart',tip,{passive:true});for(const id of ['showRH','showH','showRefs'])$(id).addEventListener('change',()=>drawChart(lastA,lastB,lastP));window.addEventListener('resize',()=>drawChart(lastA,lastB,lastP));
+fillOptions();$('propA1').value='db';$('propA2').value='rh';$('valueA1').value=25;$('valueA2').value=60;$('propB1').value='db';$('propB2').value='rh';$('valueB1').value=14;$('valueB2').value=95;for(const s of ['A','B'])for(const i of [1,2])updateUnit(s,i,false);applyLang('vi');
+</script>
+
+<div style="text-align:center;margin-top:18px;padding:14px 8px;color:#64748b;
+font-size:13px;line-height:1.6;border-top:1px solid #dbe3ee">
+<strong>Developed by Trong Ngoc</strong><br>
+<span>Phát triển bởi Trong Ngọc</span>
+</div>
+
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+  });
+}
+</script>
+
+</body>
+</html>
