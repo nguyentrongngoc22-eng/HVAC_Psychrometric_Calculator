@@ -1,7 +1,7 @@
 /* HVAC Psychrometric Calculator - Service Worker
    Bump CACHE_VERSION on every release so clients pick up new files.
    Keep this in sync with APP_VERSION shown in the app footer. */
-const CACHE_VERSION = "0.9";
+const CACHE_VERSION = "1.0";
 const CACHE_NAME = "hvac-psychro-v" + CACHE_VERSION;
 const ASSETS = [
   "./",
