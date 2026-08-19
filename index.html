@@ -121,6 +121,14 @@ button.secondary{background:#64748b}
       <div><label id="airflowUnitLabel" for="airflowUnit">Đơn vị</label><select id="airflowUnit"><option value="cmh">CMH</option><option value="m3s">m³/s</option></select></div>
       <div><label id="airflowBasisLabel" for="airflowBasis">Lưu lượng đo tại</label><select id="airflowBasis"><option value="A">Trạng thái A</option><option value="B">Trạng thái B</option></select></div>
     </div>
+    <div id="heaterBox" style="margin-bottom:14px;border:1px solid #f4c542;border-radius:12px;padding:12px;background:#fff8f0">
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:14px;font-weight:750"><input id="heaterEnable" type="checkbox" style="width:auto" checked> <span id="heaterEnableLabel">Kích hoạt Trạng thái C (heater sấy lại B → C)</span></label>
+      <div class="load-input-grid">
+        <div><label id="heaterModeLabel" for="heaterMode">Chế độ điều khiển</label><select id="heaterMode"><option value="tc">Nhập nhiệt độ cấp T_C</option><option value="kw">Nhập công suất heater</option></select></div>
+        <div><label id="heaterValueLabel" for="heaterValue">Giá trị</label><input id="heaterValue" type="number" step="0.1" value="20" inputmode="decimal"><div id="heaterValueUnit" class="unit">°C</div></div>
+        <div id="heaterHint" class="unit" style="align-self:end">Sấy lại giữ nguyên độ chứa ẩm W (gia nhiệt hiện thuần).</div>
+      </div>
+    </div>
     <div class="action-row"><button id="calc">Tính toán & So sánh</button><button id="reset" class="secondary">Đặt lại</button></div><div id="error" class="error"></div>
     <div id="validationBox" class="validation-box">
       <div id="validationTitle" class="validation-title">Kiểm tra dữ liệu</div>
@@ -145,6 +153,14 @@ button.secondary{background:#64748b}
     <h2 id="loadTitle" style="font-size:18px;margin:0 0 12px">Tải nhiệt theo lưu lượng gió A → B</h2>
     <div id="loadResults" class="load-grid"></div>
     <div id="loadNote" class="load-note"></div>
+  </div>
+
+  <div class="card" id="stateCCard" style="display:none">
+    <h2 id="stateCResultTitle" style="font-size:18px;margin:0 0 12px">Trạng thái C sau heater (B → C)</h2>
+    <div class="result-legend"><span class="legend-item"><span class="legend-swatch input"></span><span id="inputLegendC">Giá trị điều khiển</span></span><span class="legend-item"><span class="legend-swatch calc"></span><span id="calcLegendC">Giá trị tính toán</span></span></div>
+    <div id="resultsC" class="result-grid"></div>
+    <div id="statusC" class="status ok"></div>
+    <div id="heaterLoadNote" class="load-note"></div>
   </div>
 
   <div class="card">
@@ -205,8 +221,31 @@ condMismatch:"Độ chứa ẩm giảm nhưng lượng nước ngưng bằng 0; 
 identical:"Hai trạng thái gần như giống nhau nên chênh lệch và tải gần bằng 0.",
 pressureAltitude:"Áp suất khác đáng kể 101.325 kPa; kết quả đã tính theo áp suất đã nhập."
 },footer:"<strong>Version 0.8:</strong> Adds input-range validation, dependent-pair detection, saturation checks, and abnormal load warnings."}};
+for(const L of ['vi','en']){
+  const vi=L==='vi';
+  Object.assign(i18n[L],{
+    stateCTitle: vi?'Trạng thái C sau heater (B → C)':'State C after heater (B → C)',
+    heaterEnable: vi?'Kích hoạt Trạng thái C (heater sấy lại B → C)':'Enable State C (reheat B → C)',
+    heaterMode: vi?'Chế độ điều khiển':'Control mode',
+    modeTc: vi?'Nhập nhiệt độ cấp T_C':'Enter supply temperature T_C',
+    modeKw: vi?'Nhập công suất heater':'Enter heater capacity',
+    heaterValue: vi?'Giá trị':'Value',
+    heaterHint: vi?'Sấy lại giữ nguyên độ chứa ẩm W (gia nhiệt hiện thuần).':'Reheat keeps humidity ratio W constant (pure sensible heating).',
+    inputLegendC: vi?'Giá trị điều khiển':'Controlled value',
+    calcLegendC: vi?'Giá trị tính toán':'Calculated value',
+    heaterProcess:(q,tb,tc)=>vi
+      ?`<strong>Sấy lại (reheat) hiện thuần:</strong> W không đổi, DB tăng từ <strong>${tb.toFixed(2)}°C</strong> lên <strong>${tc.toFixed(2)}°C</strong> nên RH giảm. Công suất heater ≈ <strong>${q.toFixed(2)} kW</strong>. Heater không hạ độ chứa ẩm — độ ẩm đã được xử lý ở coil lạnh (A → B).`
+      :`<strong>Pure sensible reheat:</strong> W is constant while DB rises from <strong>${tb.toFixed(2)}°C</strong> to <strong>${tc.toFixed(2)}°C</strong>, so RH drops. Heater capacity ≈ <strong>${q.toFixed(2)} kW</strong>. The heater does not lower the humidity ratio — moisture was removed at the cooling coil (A → B).`
+  });
+  Object.assign(i18n[L].validationMessages,{
+    heaterCooling: vi?'C: Nhiệt độ cấp T_C phải ≥ nhiệt độ ra coil (State B); giá trị nhỏ hơn là làm lạnh chứ không phải heater.':'C: Supply temperature T_C must be ≥ the coil-leaving temperature (State B); a lower value is cooling, not reheat.',
+    heaterNoFlow: vi?'C: Cần lưu lượng gió > 0 để tính công suất heater và trạng thái C.':'C: A positive airflow is required to compute heater capacity and State C.',
+    heaterNegKw: vi?'C: Công suất heater phải ≥ 0 (heater chỉ gia nhiệt).':'C: Heater capacity must be ≥ 0 (a heater only adds heat).',
+    heaterFill: vi?'C: Vui lòng nhập giá trị heater.':'C: Please enter the heater value.'
+  });
+}
 const props={db:{vi:"Nhiệt độ khô DB",en:"Dry-bulb temperature DB",unit:"°C",def:25},wb:{vi:"Nhiệt độ bầu ướt WB",en:"Wet-bulb temperature WB",unit:"°C",def:19.5},dp:{vi:"Điểm sương DP",en:"Dew point DP",unit:"°C",def:16.7},rh:{vi:"Độ ẩm tương đối RH",en:"Relative humidity RH",unit:"%",def:60},w:{vi:"Độ chứa ẩm W",en:"Humidity ratio W",unit:"g/kg dry air",def:11.9},h:{vi:"Enthalpy h",en:"Enthalpy h",unit:"kJ/kg dry air",def:55.4},pv:{vi:"Áp suất hơi nước Pv",en:"Water vapor pressure Pv",unit:"kPa",def:1.90},v:{vi:"Thể tích riêng v",en:"Specific volume v",unit:"m³/kg dry air",def:0.858},rho:{vi:"Mật độ không khí ẩm",en:"Moist-air density",unit:"kg/m³",def:1.18},ah:{vi:"Độ ẩm tuyệt đối",en:"Absolute humidity",unit:"g/m³ moist air",def:13.8}};
-const order=["db","wb","dp","rh","w","h","pv","v","rho","ah"];let lang="vi",lastA=null,lastB=null,lastP=101.325;
+const order=["db","wb","dp","rh","w","h","pv","v","rho","ah"];let lang="vi",lastA=null,lastB=null,lastC=null,lastP=101.325;
 function pws(T){const K=T+273.15;let L;if(T>=0)L=-5.8002206e3/K+1.3914993-4.8640239e-2*K+4.1764768e-5*K*K-1.4452093e-8*K*K*K+6.5459673*Math.log(K);else L=-5.6745359e3/K+6.3925247-9.677843e-3*K+6.2215701e-7*K*K+2.0747825e-9*K*K*K-9.484024e-13*Math.pow(K,4)+4.1635019*Math.log(K);return Math.exp(L)/1000}
 const pvFromW=(W,P)=>P*W/(0.621945+W),wFromPv=(pv,P)=>0.621945*pv/(P-pv),hFrom=(T,W)=>1.006*T+W*(2501+1.86*T),vFrom=(T,W,P)=>0.287042*(T+273.15)*(1+1.607858*W)/P,rhFrom=(T,W,P)=>100*pvFromW(W,P)/pws(T);
 function dpFromPv(pv){let lo=-90,hi=100;for(let i=0;i<100;i++){const m=(lo+hi)/2;pws(m)>pv?hi=m:lo=m}return(lo+hi)/2}
@@ -299,7 +338,35 @@ function renderLoad(a,b){
   $('loadNote').innerHTML=t.loadProcess(qTotal,qSensible,qLatent,condensate);
   return {flow,Vdot,mda,qTotal,qSensible,qLatent,shr,condensate};
 }
-function applyLang(l){lang=l;document.documentElement.lang=l;const t=i18n[l];$('title').textContent=t.title;$('subtitle').textContent=t.subtitle;$('stateATitle').textContent=t.stateA;$('stateBTitle').textContent=t.stateB;$('resultATitle').textContent=t.stateA;$('resultBTitle').textContent=t.stateB;for(const s of ['A','B']){for(const i of [1,2]){$(`labelSelect${s}${i}`).textContent=i===1?t.select1:t.select2;$(`labelValue${s}${i}`).textContent=t.value}}$('pressureLabel').textContent=t.pressure;$('pressureUnit').textContent=t.pressureUnit;$('airflowLabel').textContent=t.airflow;$('airflowNote').textContent=t.airflowNote;$('airflowUnitLabel').textContent=t.airflowUnit;$('airflowBasisLabel').textContent=t.airflowBasis;$('airflowBasis').options[0].textContent=t.basisA;$('airflowBasis').options[1].textContent=t.basisB;$('loadTitle').textContent=t.loadTitle;$('calc').textContent=t.calc;$('reset').textContent=t.reset;$('inputLegend').textContent=t.inputLegend;$('calcLegend').textContent=t.calcLegend;$('resultTitle').textContent=t.results;$('compareTitle').textContent=t.compare;$('chartTitle').textContent=t.chartTitle;$('showRHText').textContent=t.showRH;$('showHText').textContent=t.showH;$('showRefsText').textContent=t.showRefs;$('chartNote').textContent=t.chartNote;$('validationTitle').textContent=t.validationTitle;fillOptions();for(const s of ['A','B'])for(const i of [1,2])updateUnit(s,i,false);calculate()}
+function updateHeaterUnit(){$('heaterValueUnit').textContent=$('heaterMode').value==='tc'?'°C':'kW';}
+function renderStateC(c,mode){
+  const box=$('resultsC');box.innerHTML='';
+  const manual=mode==='tc'?new Set(['db']):new Set();
+  for(const k of order){
+    const m=document.createElement('div');
+    m.className='metric result-animate '+(manual.has(k)?'input-value':'calculated-value');
+    m.innerHTML=`<div class="k">${props[k][lang]}</div><div><span class="v">${fmt(k,c[k])}</span><span class="u">${props[k].unit}</span></div>`;
+    box.appendChild(m);
+  }
+}
+function computeStateC(load,P,issues){
+  const t=i18n[lang],m=t.validationMessages;
+  const clear=()=>{lastC=null;$('resultsC').innerHTML='';$('statusC').className='status ok';$('statusC').innerHTML='—';$('heaterLoadNote').innerHTML='—';};
+  if(!$('heaterEnable').checked){clear();$('stateCCard').style.display='none';return;}
+  $('stateCCard').style.display='';
+  const mode=$('heaterMode').value,val=parseFloat($('heaterValue').value);
+  const Wb=lastB.w/1000,cp=1.006+1.86*Wb,Tb=lastB.db,mda=load.mda;
+  if(!isFinite(val)){issues.push({level:'bad',text:m.heaterFill});clear();return;}
+  if(!(mda>0)){issues.push({level:'bad',text:m.heaterNoFlow});clear();return;}
+  let Tc,q;
+  if(mode==='tc'){Tc=val;if(Tc<Tb-1e-6){issues.push({level:'bad',text:m.heaterCooling});clear();return;}q=mda*cp*(Tc-Tb);}
+  else{q=val;if(q<0){issues.push({level:'bad',text:m.heaterNegKw});clear();return;}Tc=Tb+q/(mda*cp);}
+  const c=allValues(Tc,Wb,P);lastC=c;
+  renderStateC(c,mode);renderStatus('statusC',c);
+  $('heaterLoadNote').innerHTML=t.heaterProcess(q,Tb,Tc);
+  issues.push(...stateIssues('C',c));
+}
+function applyLang(l){lang=l;document.documentElement.lang=l;const t=i18n[l];$('title').textContent=t.title;$('subtitle').textContent=t.subtitle;$('stateATitle').textContent=t.stateA;$('stateBTitle').textContent=t.stateB;$('resultATitle').textContent=t.stateA;$('resultBTitle').textContent=t.stateB;for(const s of ['A','B']){for(const i of [1,2]){$(`labelSelect${s}${i}`).textContent=i===1?t.select1:t.select2;$(`labelValue${s}${i}`).textContent=t.value}}$('pressureLabel').textContent=t.pressure;$('pressureUnit').textContent=t.pressureUnit;$('airflowLabel').textContent=t.airflow;$('airflowNote').textContent=t.airflowNote;$('airflowUnitLabel').textContent=t.airflowUnit;$('airflowBasisLabel').textContent=t.airflowBasis;$('airflowBasis').options[0].textContent=t.basisA;$('airflowBasis').options[1].textContent=t.basisB;$('loadTitle').textContent=t.loadTitle;$('calc').textContent=t.calc;$('reset').textContent=t.reset;$('inputLegend').textContent=t.inputLegend;$('calcLegend').textContent=t.calcLegend;$('resultTitle').textContent=t.results;$('compareTitle').textContent=t.compare;$('chartTitle').textContent=t.chartTitle;$('showRHText').textContent=t.showRH;$('showHText').textContent=t.showH;$('showRefsText').textContent=t.showRefs;$('chartNote').textContent=t.chartNote;$('validationTitle').textContent=t.validationTitle;$('heaterEnableLabel').textContent=t.heaterEnable;$('heaterModeLabel').textContent=t.heaterMode;$('heaterMode').options[0].textContent=t.modeTc;$('heaterMode').options[1].textContent=t.modeKw;$('heaterValueLabel').textContent=t.heaterValue;$('heaterHint').textContent=t.heaterHint;$('stateCResultTitle').textContent=t.stateCTitle;$('inputLegendC').textContent=t.inputLegendC;$('calcLegendC').textContent=t.calcLegendC;updateHeaterUnit();fillOptions();for(const s of ['A','B'])for(const i of [1,2])updateUnit(s,i,false);calculate()}
 
 function renderPlaceholders(){
   for(const id of ['resultsA','resultsB']){
@@ -314,14 +381,16 @@ function renderPlaceholders(){
   $('statusB').className='status ok';$('statusB').innerHTML='—';
   $('deltaResults').innerHTML='';$('processText').innerHTML='—';
   $('loadResults').innerHTML='';$('loadNote').innerHTML='—';
+  $('resultsC').innerHTML='';$('statusC').className='status ok';$('statusC').innerHTML='—';$('heaterLoadNote').innerHTML='—';
 }
 function resetUI(){
   $('propA1').value='db';$('propA2').value='rh';$('valueA1').value=25;$('valueA2').value=60;
   $('propB1').value='db';$('propB2').value='rh';$('valueB1').value=14;$('valueB2').value=95;
   $('pressure').value=101.325;$('airflow').value=10000;$('airflowUnit').value='cmh';$('airflowBasis').value='A';
+  $('heaterEnable').checked=true;$('heaterMode').value='tc';$('heaterValue').value=20;updateHeaterUnit();
   for(const s of ['A','B'])for(const i of [1,2])updateUnit(s,i,false);
-  $('error').style.display='none';renderValidation([]);renderPlaceholders();
-  lastA=null;lastB=null;lastP=101.325;drawChart(null,null,lastP);
+  $('error').style.display='none';renderValidation([]);renderPlaceholders();$('stateCCard').style.display='none';
+  lastA=null;lastB=null;lastC=null;lastP=101.325;drawChart(null,null,null,lastP);
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -350,8 +419,9 @@ function calculate(){
     if(load.qLatent*load.qTotal<0)issues.push({level:'warn',text:m.latentSign});
     if(lastA.w-lastB.w>0.05&&load.condensate<=0)issues.push({level:'warn',text:m.condMismatch});
     if(Math.abs(lastA.db-lastB.db)<0.02&&Math.abs(lastA.w-lastB.w)<0.01)issues.push({level:'warn',text:m.identical});
+    computeStateC(load,P,issues);
     renderValidation(issues);
-    drawChart(lastA,lastB,P);
+    drawChart(lastA,lastB,lastC,P);
   }catch(err){
     if(!$('validationList').children.length)renderValidation(issues);
     e.textContent=err.message;e.style.display='block'
@@ -360,9 +430,9 @@ function calculate(){
 
 
 
-function getChartRanges(a,b){
+function getChartRanges(a,b,c){
   const dbVals=[], wVals=[];
-  for(const s of [a,b]){
+  for(const s of [a,b,c]){
     if(s && Number.isFinite(s.db)) dbVals.push(s.db);
     if(s && Number.isFinite(s.w)) wVals.push(s.w);
   }
@@ -381,9 +451,9 @@ function getChartRanges(a,b){
 }
 
 function geom(){const c=$('psychChart'),ctx=c.getContext('2d'),dpr=Math.max(1,devicePixelRatio||1),W=c.parentElement.clientWidth,H=Math.max(360,Math.min(560,W*.62));c.style.width=W+'px';c.style.height=H+'px';c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);return{c,ctx,W,H,m:{l:54,r:50,t:24,b:44}}}
-function drawChart(a,b,P){const g=geom(),{ctx,W,H,m}=g,{Tmin,Tmax,Wmax}=getChartRanges(a,b),x=T=>m.l+(T-Tmin)/(Tmax-Tmin)*(W-m.l-m.r),y=w=>H-m.b-w/Wmax*(H-m.t-m.b),ws=T=>{const pv=pws(T);return pv>=P?NaN:wFromPv(pv,P)*1000};ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#dbe3ee';ctx.fillStyle='#64748b';ctx.font='11px system-ui';for(let T=Tmin;T<=Tmax;T+=5){ctx.beginPath();ctx.moveTo(x(T),m.t);ctx.lineTo(x(T),H-m.b);ctx.stroke();ctx.fillText(T,x(T)-7,H-m.b+18)}for(let w=0;w<=Wmax;w+=2){ctx.beginPath();ctx.moveTo(m.l,y(w));ctx.lineTo(W-m.r,y(w));ctx.stroke();ctx.fillText(w,W-m.r+7,y(w)+4)}ctx.strokeStyle='#0f172a';ctx.beginPath();ctx.moveTo(m.l,m.t);ctx.lineTo(m.l,H-m.b);ctx.lineTo(W-m.r,H-m.b);ctx.stroke();ctx.fillStyle='#0f172a';ctx.fillText('DB (°C)',W/2-18,H-10);ctx.save();ctx.translate(W-12,H/2+28);ctx.rotate(-Math.PI/2);ctx.fillText('W (g/kg dry air)',0,0);ctx.restore();ctx.strokeStyle='#2563eb';ctx.lineWidth=2;ctx.beginPath();let st=false;for(let T=Tmin;T<=Tmax;T+=.25){const w=ws(T);if(w>=0&&w<=Wmax){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke();if($('showRH').checked)for(let rh=10;rh<=90;rh+=10){ctx.strokeStyle='rgba(37,99,235,.3)';ctx.lineWidth=1;ctx.beginPath();st=false;for(let T=Tmin;T<=Tmax;T+=.4){const pv=rh/100*pws(T),w=wFromPv(pv,P)*1000;if(w>=0&&w<=Wmax){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke()}if($('showH').checked)for(let h=10;h<=110;h+=10){ctx.strokeStyle='rgba(180,83,9,.25)';ctx.beginPath();st=false;for(let T=Tmin;T<=Tmax;T+=.5){const w=(h-1.006*T)/(2501+1.86*T)*1000;if(w>=0&&w<=Wmax&&w<=ws(T)){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke()}if(a&&b){const ax=x(a.db),ay=y(a.w),bx=x(b.db),by=y(b.w);ctx.strokeStyle='#7c3aed';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();const ang=Math.atan2(by-ay,bx-ax),len=10;ctx.fillStyle='#7c3aed';ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-len*Math.cos(ang-.45),by-len*Math.sin(ang-.45));ctx.lineTo(bx-len*Math.cos(ang+.45),by-len*Math.sin(ang+.45));ctx.closePath();ctx.fill();for(const [v,label,color] of [[a,'A','#2563eb'],[b,'B','#dc2626']]){const px=x(v.db),py=y(v.w);if($('showRefs').checked){ctx.setLineDash([5,4]);ctx.strokeStyle=color;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,H-m.b);ctx.lineTo(px,py);ctx.lineTo(m.l,py);ctx.stroke();ctx.setLineDash([])}ctx.fillStyle=color;ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.fillText(label,px-3.5,py+3.5);g.c.dataset[label+'x']=px;g.c.dataset[label+'y']=py}}}
-function tip(ev){const c=$('psychChart'),r=c.getBoundingClientRect(),sx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left,sy=(ev.touches?ev.touches[0].clientY:ev.clientY)-r.top;let chosen=null,label='';for(const L of ['A','B']){const px=parseFloat(c.dataset[L+'x']||-999),py=parseFloat(c.dataset[L+'y']||-999);if(Math.hypot(sx-px,sy-py)<30){chosen=L==='A'?lastA:lastB;label=L;break}}const t=$('chartTip');if(!chosen){t.style.display='none';return}t.innerHTML=`<strong>${label}</strong><br>DB: ${fmt('db',chosen.db)} °C<br>RH: ${fmt('rh',chosen.rh)} %<br>DP: ${fmt('dp',chosen.dp)} °C<br>WB: ${fmt('wb',chosen.wb)} °C<br>W: ${fmt('w',chosen.w)} g/kg<br>h: ${fmt('h',chosen.h)} kJ/kg`;t.style.display='block';t.style.left=Math.min(r.width-225,Math.max(8,sx+12))+'px';t.style.top=Math.max(8,sy-125)+'px'}
-for(const s of ['A','B'])for(const i of [1,2])$(`prop${s}${i}`).addEventListener('change',()=>updateUnit(s,i,true));$('language').addEventListener('change',()=>applyLang($('language').value));$('calc').addEventListener('click',calculate);$('reset').addEventListener('click',resetUI);for(const id of ['airflow','airflowUnit','airflowBasis'])$(id).addEventListener('change',calculate);$('psychChart').addEventListener('click',tip);$('psychChart').addEventListener('touchstart',tip,{passive:true});for(const id of ['showRH','showH','showRefs'])$(id).addEventListener('change',()=>drawChart(lastA,lastB,lastP));window.addEventListener('resize',()=>drawChart(lastA,lastB,lastP));
+function drawChart(a,b,c,P){const g=geom(),{ctx,W,H,m}=g,{Tmin,Tmax,Wmax}=getChartRanges(a,b,c),x=T=>m.l+(T-Tmin)/(Tmax-Tmin)*(W-m.l-m.r),y=w=>H-m.b-w/Wmax*(H-m.t-m.b),ws=T=>{const pv=pws(T);return pv>=P?NaN:wFromPv(pv,P)*1000};ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#dbe3ee';ctx.fillStyle='#64748b';ctx.font='11px system-ui';for(let T=Tmin;T<=Tmax;T+=5){ctx.beginPath();ctx.moveTo(x(T),m.t);ctx.lineTo(x(T),H-m.b);ctx.stroke();ctx.fillText(T,x(T)-7,H-m.b+18)}for(let w=0;w<=Wmax;w+=2){ctx.beginPath();ctx.moveTo(m.l,y(w));ctx.lineTo(W-m.r,y(w));ctx.stroke();ctx.fillText(w,W-m.r+7,y(w)+4)}ctx.strokeStyle='#0f172a';ctx.beginPath();ctx.moveTo(m.l,m.t);ctx.lineTo(m.l,H-m.b);ctx.lineTo(W-m.r,H-m.b);ctx.stroke();ctx.fillStyle='#0f172a';ctx.fillText('DB (°C)',W/2-18,H-10);ctx.save();ctx.translate(W-12,H/2+28);ctx.rotate(-Math.PI/2);ctx.fillText('W (g/kg dry air)',0,0);ctx.restore();ctx.strokeStyle='#2563eb';ctx.lineWidth=2;ctx.beginPath();let st=false;for(let T=Tmin;T<=Tmax;T+=.25){const w=ws(T);if(w>=0&&w<=Wmax){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke();if($('showRH').checked)for(let rh=10;rh<=90;rh+=10){ctx.strokeStyle='rgba(37,99,235,.3)';ctx.lineWidth=1;ctx.beginPath();st=false;for(let T=Tmin;T<=Tmax;T+=.4){const pv=rh/100*pws(T),w=wFromPv(pv,P)*1000;if(w>=0&&w<=Wmax){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke()}if($('showH').checked)for(let h=10;h<=110;h+=10){ctx.strokeStyle='rgba(180,83,9,.25)';ctx.beginPath();st=false;for(let T=Tmin;T<=Tmax;T+=.5){const w=(h-1.006*T)/(2501+1.86*T)*1000;if(w>=0&&w<=Wmax&&w<=ws(T)){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke()}if(a&&b){const ax=x(a.db),ay=y(a.w),bx=x(b.db),by=y(b.w);ctx.strokeStyle='#7c3aed';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();const ang=Math.atan2(by-ay,bx-ax),len=10;ctx.fillStyle='#7c3aed';ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-len*Math.cos(ang-.45),by-len*Math.sin(ang-.45));ctx.lineTo(bx-len*Math.cos(ang+.45),by-len*Math.sin(ang+.45));ctx.closePath();ctx.fill();if(c){const cx=x(c.db),cy=y(c.w);ctx.strokeStyle='#059669';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(cx,cy);ctx.stroke();const ang2=Math.atan2(cy-by,cx-bx);ctx.fillStyle='#059669';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx-len*Math.cos(ang2-.45),cy-len*Math.sin(ang2-.45));ctx.lineTo(cx-len*Math.cos(ang2+.45),cy-len*Math.sin(ang2+.45));ctx.closePath();ctx.fill();}const pts=[[a,'A','#2563eb'],[b,'B','#dc2626']];if(c)pts.push([c,'C','#059669']);for(const [v,label,color] of pts){const px=x(v.db),py=y(v.w);if($('showRefs').checked){ctx.setLineDash([5,4]);ctx.strokeStyle=color;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,H-m.b);ctx.lineTo(px,py);ctx.lineTo(m.l,py);ctx.stroke();ctx.setLineDash([])}ctx.fillStyle=color;ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.fillText(label,px-3.5,py+3.5);g.c.dataset[label+'x']=px;g.c.dataset[label+'y']=py}}}
+function tip(ev){const c=$('psychChart'),r=c.getBoundingClientRect(),sx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left,sy=(ev.touches?ev.touches[0].clientY:ev.clientY)-r.top;let chosen=null,label='';for(const L of ['A','B','C']){const px=parseFloat(c.dataset[L+'x']||-999),py=parseFloat(c.dataset[L+'y']||-999);if(Math.hypot(sx-px,sy-py)<30){chosen=L==='A'?lastA:(L==='B'?lastB:lastC);label=L;break}}const t=$('chartTip');if(!chosen){t.style.display='none';return}t.innerHTML=`<strong>${label}</strong><br>DB: ${fmt('db',chosen.db)} °C<br>RH: ${fmt('rh',chosen.rh)} %<br>DP: ${fmt('dp',chosen.dp)} °C<br>WB: ${fmt('wb',chosen.wb)} °C<br>W: ${fmt('w',chosen.w)} g/kg<br>h: ${fmt('h',chosen.h)} kJ/kg`;t.style.display='block';t.style.left=Math.min(r.width-225,Math.max(8,sx+12))+'px';t.style.top=Math.max(8,sy-125)+'px'}
+for(const s of ['A','B'])for(const i of [1,2])$(`prop${s}${i}`).addEventListener('change',()=>updateUnit(s,i,true));$('language').addEventListener('change',()=>applyLang($('language').value));$('calc').addEventListener('click',calculate);$('reset').addEventListener('click',resetUI);for(const id of ['airflow','airflowUnit','airflowBasis'])$(id).addEventListener('change',calculate);for(const id of ['heaterEnable','heaterValue'])$(id).addEventListener('change',calculate);$('heaterValue').addEventListener('input',calculate);$('heaterMode').addEventListener('change',()=>{updateHeaterUnit();calculate()});$('psychChart').addEventListener('click',tip);$('psychChart').addEventListener('touchstart',tip,{passive:true});for(const id of ['showRH','showH','showRefs'])$(id).addEventListener('change',()=>drawChart(lastA,lastB,lastC,lastP));window.addEventListener('resize',()=>drawChart(lastA,lastB,lastC,lastP));
 fillOptions();$('propA1').value='db';$('propA2').value='rh';$('valueA1').value=25;$('valueA2').value=60;$('propB1').value='db';$('propB2').value='rh';$('valueB1').value=14;$('valueB2').value=95;for(const s of ['A','B'])for(const i of [1,2])updateUnit(s,i,false);applyLang('vi');
 </script>
 
