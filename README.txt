@@ -1,4 +1,4 @@
-HVAC Psychrometric Calculator v0.9 PWA
+HVAC Psychrometric Calculator v1.0 PWA
 
 Files:
 - index.html
