@@ -1,14 +1,15 @@
 /* HVAC Psychrometric Calculator - Service Worker
    Bump CACHE_VERSION on every release so clients pick up new files.
    Keep this in sync with APP_VERSION shown in the app footer. */
-const CACHE_VERSION = "1.0";
+const CACHE_VERSION = "1.1";
 const CACHE_NAME = "hvac-psychro-v" + CACHE_VERSION;
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  "./vendor/xlsx.mini.min.js"
 ];
 
 self.addEventListener("install", (event) => {

@@ -1,4 +1,4 @@
-HVAC Psychrometric Calculator v1.0 PWA
+HVAC Psychrometric Calculator v1.1 PWA
 
 Files:
 - index.html
@@ -6,6 +6,7 @@ Files:
 - service-worker.js
 - icon-192.png
 - icon-512.png
+- vendor/xlsx.mini.min.js (SheetJS, Apache-2.0 — used for Excel export)
 
 GitHub Pages:
 1. Upload all files to the root of one repository.

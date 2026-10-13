@@ -49,6 +49,7 @@ button:active{transform:translateY(1px)}
 
 .chart-wrap{position:relative;width:100%;overflow:hidden;border:1px solid var(--line);border-radius:14px;background:#fff}
 #psychChart{display:block;width:100%;height:auto;touch-action:manipulation}
+.export-row{margin-top:10px}button.export{background:#047857}button:disabled{opacity:.5;cursor:not-allowed}
 .chart-toolbar{display:flex;flex-wrap:wrap;gap:8px 14px;margin:0 0 10px;font-size:13px;color:var(--muted)}
 .chart-toolbar label{display:flex;align-items:center;gap:6px;margin:0;font-weight:600}
 .chart-toolbar input{width:auto;padding:0}
@@ -136,7 +137,7 @@ button.secondary{background:#64748b}
         <div id="heaterTargetHint" class="unit" style="align-self:end">B được tính ngược từ mục tiêu C và giả định RH ra coil.</div>
       </div>
     </div>
-    <div class="action-row"><button id="calc">Tính toán & So sánh</button><button id="reset" class="secondary">Đặt lại</button></div><div id="error" class="error"></div>
+    <div class="action-row"><button id="calc">Tính toán & So sánh</button><button id="reset" class="secondary">Đặt lại</button></div><div class="action-row export-row"><button id="exportXlsx" class="export" disabled>Xuất báo cáo Excel (.xlsx)</button><button id="exportPng" class="export" disabled>Tải biểu đồ PNG</button></div><div id="error" class="error"></div>
     <div id="validationBox" class="validation-box">
       <div id="validationTitle" class="validation-title">Kiểm tra dữ liệu</div>
       <ul id="validationList" class="validation-list"></ul>
@@ -222,7 +223,7 @@ latentSign:"Tải ẩn và tải tổng khác dấu; hãy kiểm tra chiều qu�
 condMismatch:"Độ chứa ẩm giảm nhưng lượng nước ngưng bằng 0; kiểm tra lưu lượng gió.",
 identical:"Hai trạng thái gần như giống nhau nên chênh lệch và tải gần bằng 0.",
 pressureAltitude:"Áp suất khác đáng kể 101.325 kPa; kết quả đã tính theo áp suất đã nhập."
-},footer:"<strong>Version 1.0:</strong> Bổ sung card Công suất điện tiêu thụ (COP chiller + loại heater), đổi tên Tổng tải nhiệt hệ thống, nâng cache service worker v1.0. Trạng thái C có ba chế độ (T_C, kW, mục tiêu DB+RH tính ngược B)."},en:{title:"HVAC Psychrometric Calculator",subtitle:"Select two properties for each state, calculate the remaining properties, and compare the air process.",stateA:"State A",stateB:"State B",select1:"First property",select2:"Second property",value:"Value",pressure:"Atmospheric pressure",pressureUnit:"kPa — default value is near sea level",airflow:"Airflow",airflowNote:"Volumetric airflow at the selected state",airflowUnit:"Unit",airflowBasis:"Airflow measured at",basisA:"State A",basisB:"State B",loadTitle:"Air-side load for process A → B",loadLabels:{mda:"Dry-air mass flow",total:"Total load",sensible:"Sensible load",latent:"Latent load",shr:"SHR",condensate:"Condensate"},loadProcess:(qt,qs,ql,cond)=>`<strong>Sign convention:</strong> Positive values are capacity removed from the air for A → B; negative values indicate heating/humidification. ${cond>0?`The process removes approximately <strong>${cond.toFixed(2)} kg/h</strong> of water.`:"No condensate is produced in the A → B direction."}`,calc:"Calculate & Compare",reset:"Reset",inputLegend:"Manual input",calcLegend:"Calculated value",results:"Two-state results",compare:"Comparison A → B",chartTitle:"Psychrometric Chart",showRH:"RH curves",showH:"Enthalpy lines",showRefs:"Reference lines",chartNote:"Tap point A, B or C to view its properties.",duplicate:"Each state must use two different properties.",fill:"Please enter all required values.",pressureErr:"Atmospheric pressure is outside a reasonable range.",dependent:"The selected properties are not independent or do not uniquely define the air state.",supersat:"The calculated state exceeds RH = 100% saturation.",condensation:dp=>`Dew point: <strong>${dp}°C</strong>. Surfaces below this value may develop condensation.`,nearSat:dp=>`The air is close to saturation. Surfaces below <strong>${dp}°C</strong> have a high condensation risk.`,deltaLabels:{db:"ΔDB",rh:"ΔRH",w:"ΔW",h:"Δh",dp:"ΔDP",wb:"ΔWB"},process:(dT,dW,dh)=>{let a=dT>0.05?"Heating":dT<-0.05?"Cooling":"Nearly constant dry-bulb temperature";let b=dW>0.02?"humidification":dW<-0.02?"dehumidification":"nearly constant humidity ratio";return `<strong>Process identification:</strong> ${a} with ${b}. Enthalpy ${dh>0?"increases":dh<0?"decreases":"is nearly unchanged"}.`;},validationTitle:"Kiểm tra dữ liệu",validationOk:"Dữ liệu hợp lệ trong phạm vi HVAC thông thường.",validationMessages:{
+},footer:"<strong>Version 1.1:</strong> Xuất báo cáo Excel (.xlsx) và tải biểu đồ PNG. <strong>Version 1.0:</strong> Bổ sung card Công suất điện tiêu thụ (COP chiller + loại heater), đổi tên Tổng tải nhiệt hệ thống, nâng cache service worker v1.0. Trạng thái C có ba chế độ (T_C, kW, mục tiêu DB+RH tính ngược B)."},en:{title:"HVAC Psychrometric Calculator",subtitle:"Select two properties for each state, calculate the remaining properties, and compare the air process.",stateA:"State A",stateB:"State B",select1:"First property",select2:"Second property",value:"Value",pressure:"Atmospheric pressure",pressureUnit:"kPa — default value is near sea level",airflow:"Airflow",airflowNote:"Volumetric airflow at the selected state",airflowUnit:"Unit",airflowBasis:"Airflow measured at",basisA:"State A",basisB:"State B",loadTitle:"Air-side load for process A → B",loadLabels:{mda:"Dry-air mass flow",total:"Total load",sensible:"Sensible load",latent:"Latent load",shr:"SHR",condensate:"Condensate"},loadProcess:(qt,qs,ql,cond)=>`<strong>Sign convention:</strong> Positive values are capacity removed from the air for A → B; negative values indicate heating/humidification. ${cond>0?`The process removes approximately <strong>${cond.toFixed(2)} kg/h</strong> of water.`:"No condensate is produced in the A → B direction."}`,calc:"Calculate & Compare",reset:"Reset",inputLegend:"Manual input",calcLegend:"Calculated value",results:"Two-state results",compare:"Comparison A → B",chartTitle:"Psychrometric Chart",showRH:"RH curves",showH:"Enthalpy lines",showRefs:"Reference lines",chartNote:"Tap point A, B or C to view its properties.",duplicate:"Each state must use two different properties.",fill:"Please enter all required values.",pressureErr:"Atmospheric pressure is outside a reasonable range.",dependent:"The selected properties are not independent or do not uniquely define the air state.",supersat:"The calculated state exceeds RH = 100% saturation.",condensation:dp=>`Dew point: <strong>${dp}°C</strong>. Surfaces below this value may develop condensation.`,nearSat:dp=>`The air is close to saturation. Surfaces below <strong>${dp}°C</strong> have a high condensation risk.`,deltaLabels:{db:"ΔDB",rh:"ΔRH",w:"ΔW",h:"Δh",dp:"ΔDP",wb:"ΔWB"},process:(dT,dW,dh)=>{let a=dT>0.05?"Heating":dT<-0.05?"Cooling":"Nearly constant dry-bulb temperature";let b=dW>0.02?"humidification":dW<-0.02?"dehumidification":"nearly constant humidity ratio";return `<strong>Process identification:</strong> ${a} with ${b}. Enthalpy ${dh>0?"increases":dh<0?"decreases":"is nearly unchanged"}.`;},validationTitle:"Kiểm tra dữ liệu",validationOk:"Dữ liệu hợp lệ trong phạm vi HVAC thông thường.",validationMessages:{
 same:"Hai thông số trong cùng một trạng thái không được trùng nhau.",
 dependent:"Cặp thông số này phụ thuộc trực tiếp nên không xác định duy nhất trạng thái.",
 rhRange:"RH phải lớn hơn 0% và không vượt quá 100%.",
@@ -241,10 +242,33 @@ latentSign:"Tải ẩn và tải tổng khác dấu; hãy kiểm tra chiều qu�
 condMismatch:"Độ chứa ẩm giảm nhưng lượng nước ngưng bằng 0; kiểm tra lưu lượng gió.",
 identical:"Hai trạng thái gần như giống nhau nên chênh lệch và tải gần bằng 0.",
 pressureAltitude:"Áp suất khác đáng kể 101.325 kPa; kết quả đã tính theo áp suất đã nhập."
-},footer:"<strong>Version 1.0:</strong> Adds an electrical-power card (chiller COP + heater type), renames the total system heat load, and bumps the service-worker cache to v1.0. State C has three modes (T_C, kW, and a DB+RH target that solves B)."}};
+},footer:"<strong>Version 1.1:</strong> Excel (.xlsx) report export and chart PNG download. <strong>Version 1.0:</strong> Adds an electrical-power card (chiller COP + heater type), renames the total system heat load, and bumps the service-worker cache to v1.0. State C has three modes (T_C, kW, and a DB+RH target that solves B)."}};
 for(const L of ['vi','en']){
   const vi=L==='vi';
   Object.assign(i18n[L],{
+    exportXlsx: vi?'Xuất báo cáo Excel (.xlsx)':'Export Excel report (.xlsx)',
+    exportPng: vi?'Tải biểu đồ PNG':'Download chart PNG',
+    exportLoadFail: vi?'Không tải được thư viện xuất Excel. Hãy mở ứng dụng khi có mạng một lần rồi thử lại.':'Could not load the Excel export library. Open the app once while online, then try again.',
+    sheetInputs: vi?'Đầu vào':'Inputs',
+    sheetStates: vi?'Trạng thái':'States',
+    sheetLoads: vi?'Tải nhiệt':'Heat loads',
+    sheetElec: vi?'Điện':'Electrical',
+    sheetWarn: vi?'Cảnh báo':'Warnings',
+    colParam: vi?'Thông số':'Parameter',
+    colValue: vi?'Giá trị':'Value',
+    colUnit: vi?'Đơn vị':'Unit',
+    colItem: vi?'Hạng mục':'Item',
+    colLevel: vi?'Mức':'Level',
+    colMessage: vi?'Nội dung':'Message',
+    levelBad: vi?'Lỗi':'Error',
+    levelWarn: vi?'Cảnh báo':'Warning',
+    generated: vi?'Thời điểm xuất':'Generated',
+    version: vi?'Phiên bản':'Version',
+    yes: vi?'Có':'Yes',
+    no: vi?'Không':'No',
+    volFlow: vi?'Lưu lượng thể tích':'Volumetric flow',
+    bDerived: vi?'Tính ngược từ mục tiêu C':'Solved from the C target',
+    noWarnings: vi?'Không có cảnh báo.':'No warnings.',
     stateCTitle: vi?'Trạng thái C sau heater (B → C)':'State C after heater (B → C)',
     heaterEnable: vi?'Kích hoạt Trạng thái C (heater sấy lại B → C)':'Enable State C (reheat B → C)',
     heaterMode: vi?'Chế độ điều khiển':'Control mode',
@@ -292,7 +316,7 @@ for(const L of ['vi','en']){
   });
 }
 const props={db:{vi:"Nhiệt độ khô DB",en:"Dry-bulb temperature DB",unit:"°C",def:25},wb:{vi:"Nhiệt độ bầu ướt WB",en:"Wet-bulb temperature WB",unit:"°C",def:19.5},dp:{vi:"Điểm sương DP",en:"Dew point DP",unit:"°C",def:16.7},rh:{vi:"Độ ẩm tương đối RH",en:"Relative humidity RH",unit:"%",def:60},w:{vi:"Độ chứa ẩm W",en:"Humidity ratio W",unit:"g/kg dry air",def:11.9},h:{vi:"Enthalpy h",en:"Enthalpy h",unit:"kJ/kg dry air",def:55.4},pv:{vi:"Áp suất hơi nước Pv",en:"Water vapor pressure Pv",unit:"kPa",def:1.90},v:{vi:"Thể tích riêng v",en:"Specific volume v",unit:"m³/kg dry air",def:0.858},rho:{vi:"Mật độ không khí ẩm",en:"Moist-air density",unit:"kg/m³",def:1.18},ah:{vi:"Độ ẩm tuyệt đối",en:"Absolute humidity",unit:"g/m³ moist air",def:13.8}};
-const order=["db","wb","dp","rh","w","h","pv","v","rho","ah"];let lang="vi",lastA=null,lastB=null,lastC=null,lastP=101.325,lastHeaterKw=0;
+const order=["db","wb","dp","rh","w","h","pv","v","rho","ah"];let lang="vi",lastReport=null,lastA=null,lastB=null,lastC=null,lastP=101.325,lastHeaterKw=0;
 function pws(T){const K=T+273.15;let L;if(T>=0)L=-5.8002206e3/K+1.3914993-4.8640239e-2*K+4.1764768e-5*K*K-1.4452093e-8*K*K*K+6.5459673*Math.log(K);else L=-5.6745359e3/K+6.3925247-9.677843e-3*K+6.2215701e-7*K*K+2.0747825e-9*K*K*K-9.484024e-13*Math.pow(K,4)+4.1635019*Math.log(K);return Math.exp(L)/1000}
 const pvFromW=(W,P)=>P*W/(0.621945+W),wFromPv=(pv,P)=>0.621945*pv/(P-pv),hFrom=(T,W)=>1.006*T+W*(2501+1.86*T),vFrom=(T,W,P)=>0.287042*(T+273.15)*(1+1.607858*W)/P,rhFrom=(T,W,P)=>100*pvFromW(W,P)/pws(T);
 function dpFromPv(pv){let lo=-90,hi=100;for(let i=0;i<100;i++){const m=(lo+hi)/2;pws(m)>pv?hi=m:lo=m}return(lo+hi)/2}
@@ -459,8 +483,9 @@ function renderElectrical(coolThermal,heaterThermal,issues){
   for(const [k,v] of vals){const el=document.createElement('div');el.className='load-card';el.innerHTML=`<div class="k">${t.elecLabels[k]}</div><div><span class="v">${isFinite(v)?v.toFixed(2):'N/A'}</span><span class="u">kW</span></div>`;box.appendChild(el)}
   $('elecNote').innerHTML=t.elecNote(htype,cop);
   $('elecCard').style.display='';
+  return {cop,htype,chillerE,heaterE,totalE};
 }
-function applyLang(l){lang=l;document.documentElement.lang=l;const t=i18n[l];$('title').textContent=t.title;$('subtitle').textContent=t.subtitle;$('stateATitle').textContent=t.stateA;$('stateBTitle').textContent=t.stateB;$('resultATitle').textContent=t.stateA;$('resultBTitle').textContent=t.stateB;for(const s of ['A','B']){for(const i of [1,2]){$(`labelSelect${s}${i}`).textContent=i===1?t.select1:t.select2;$(`labelValue${s}${i}`).textContent=t.value}}$('pressureLabel').textContent=t.pressure;$('pressureUnit').textContent=t.pressureUnit;$('airflowLabel').textContent=t.airflow;$('airflowNote').textContent=t.airflowNote;$('airflowUnitLabel').textContent=t.airflowUnit;$('airflowBasisLabel').textContent=t.airflowBasis;$('airflowBasis').options[0].textContent=t.basisA;$('airflowBasis').options[1].textContent=t.basisB;$('loadTitle').textContent=t.loadTitle;$('calc').textContent=t.calc;$('reset').textContent=t.reset;$('inputLegend').textContent=t.inputLegend;$('calcLegend').textContent=t.calcLegend;$('resultTitle').textContent=t.results;$('compareTitle').textContent=t.compare;$('chartTitle').textContent=t.chartTitle;$('showRHText').textContent=t.showRH;$('showHText').textContent=t.showH;$('showRefsText').textContent=t.showRefs;$('chartNote').textContent=t.chartNote;$('validationTitle').textContent=t.validationTitle;$('heaterEnableLabel').textContent=t.heaterEnable;$('heaterModeLabel').textContent=t.heaterMode;$('heaterMode').options[0].textContent=t.modeTc;$('heaterMode').options[1].textContent=t.modeKw;$('heaterMode').options[2].textContent=t.modeTarget;$('heaterValueLabel').textContent=t.heaterValue;$('heaterHint').textContent=t.heaterHint;$('heaterRHLabel').textContent=t.heaterRH;$('heaterCoilRHLabel').textContent=t.heaterCoilRH;$('heaterTargetHint').textContent=t.heaterTargetHint;$('stateBDriven').textContent=t.stateBDriven;$('systemLoadTitle').textContent=t.systemTitle;$('stateCResultTitle').textContent=t.stateCTitle;$('inputLegendC').textContent=t.inputLegendC;$('calcLegendC').textContent=t.calcLegendC;$('elecTitle').textContent=t.elecTitle;$('copLabel').textContent=t.cop;$('copNote').textContent=t.copNote;$('heaterTypeLabel').textContent=t.heaterType;$('heaterType').options[0].textContent=t.heaterElectric;$('heaterType').options[1].textContent=t.heaterHotwater;$('elecHint').textContent=t.elecHint;updateHeaterUnit();fillOptions();for(const s of ['A','B'])for(const i of [1,2])updateUnit(s,i,false);calculate()}
+function applyLang(l){lang=l;document.documentElement.lang=l;const t=i18n[l];$('title').textContent=t.title;$('subtitle').textContent=t.subtitle;$('stateATitle').textContent=t.stateA;$('stateBTitle').textContent=t.stateB;$('resultATitle').textContent=t.stateA;$('resultBTitle').textContent=t.stateB;for(const s of ['A','B']){for(const i of [1,2]){$(`labelSelect${s}${i}`).textContent=i===1?t.select1:t.select2;$(`labelValue${s}${i}`).textContent=t.value}}$('pressureLabel').textContent=t.pressure;$('pressureUnit').textContent=t.pressureUnit;$('airflowLabel').textContent=t.airflow;$('airflowNote').textContent=t.airflowNote;$('airflowUnitLabel').textContent=t.airflowUnit;$('airflowBasisLabel').textContent=t.airflowBasis;$('airflowBasis').options[0].textContent=t.basisA;$('airflowBasis').options[1].textContent=t.basisB;$('loadTitle').textContent=t.loadTitle;$('calc').textContent=t.calc;$('reset').textContent=t.reset;$('inputLegend').textContent=t.inputLegend;$('calcLegend').textContent=t.calcLegend;$('resultTitle').textContent=t.results;$('compareTitle').textContent=t.compare;$('chartTitle').textContent=t.chartTitle;$('showRHText').textContent=t.showRH;$('showHText').textContent=t.showH;$('showRefsText').textContent=t.showRefs;$('chartNote').textContent=t.chartNote;$('validationTitle').textContent=t.validationTitle;$('heaterEnableLabel').textContent=t.heaterEnable;$('heaterModeLabel').textContent=t.heaterMode;$('heaterMode').options[0].textContent=t.modeTc;$('heaterMode').options[1].textContent=t.modeKw;$('heaterMode').options[2].textContent=t.modeTarget;$('heaterValueLabel').textContent=t.heaterValue;$('heaterHint').textContent=t.heaterHint;$('heaterRHLabel').textContent=t.heaterRH;$('heaterCoilRHLabel').textContent=t.heaterCoilRH;$('heaterTargetHint').textContent=t.heaterTargetHint;$('stateBDriven').textContent=t.stateBDriven;$('systemLoadTitle').textContent=t.systemTitle;$('stateCResultTitle').textContent=t.stateCTitle;$('inputLegendC').textContent=t.inputLegendC;$('calcLegendC').textContent=t.calcLegendC;$('elecTitle').textContent=t.elecTitle;$('copLabel').textContent=t.cop;$('copNote').textContent=t.copNote;$('heaterTypeLabel').textContent=t.heaterType;$('heaterType').options[0].textContent=t.heaterElectric;$('heaterType').options[1].textContent=t.heaterHotwater;$('elecHint').textContent=t.elecHint;$('exportXlsx').textContent=t.exportXlsx;$('exportPng').textContent=t.exportPng;updateHeaterUnit();fillOptions();for(const s of ['A','B'])for(const i of [1,2])updateUnit(s,i,false);calculate()}
 
 function renderPlaceholders(){
   for(const id of ['resultsA','resultsB']){
@@ -487,12 +512,13 @@ function resetUI(){
   $('cop').value=3.0;$('heaterType').value='electric';
   for(const s of ['A','B'])for(const i of [1,2])updateUnit(s,i,false);
   $('error').style.display='none';renderValidation([]);renderPlaceholders();$('stateCCard').style.display='none';
-  lastA=null;lastB=null;lastC=null;lastP=101.325;lastHeaterKw=0;drawChart(null,null,null,lastP);
+  setReport(null);lastA=null;lastB=null;lastC=null;lastP=101.325;lastHeaterKw=0;drawChart(null,null,null,lastP);
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function calculate(){
   const e=$('error');e.style.display='none';
+  setReport(null);
   const issues=[];
   try{
     const P=parseFloat($('pressure').value);
@@ -519,9 +545,10 @@ function calculate(){
     if(lastA.w-lastB.w>0.05&&load.condensate<=0)issues.push({level:'warn',text:m.condMismatch});
     if(Math.abs(lastA.db-lastB.db)<0.02&&Math.abs(lastA.w-lastB.w)<0.01)issues.push({level:'warn',text:m.identical});
     computeStateC(load,P,issues);
-    renderElectrical(load.qTotal,lastHeaterKw,issues);
+    const elec=renderElectrical(load.qTotal,lastHeaterKw,issues);
     renderValidation(issues);
     drawChart(lastA,lastB,lastC,P);
+    setReport({P,tMode,load,elec,issues,a:lastA,b:lastB,c:lastC,heaterKw:lastHeaterKw});
   }catch(err){
     if(!$('validationList').children.length)renderValidation(issues);
     e.textContent=err.message;e.style.display='block'
@@ -553,8 +580,65 @@ function getChartRanges(a,b,c){
 function geom(){const c=$('psychChart'),ctx=c.getContext('2d'),dpr=Math.max(1,devicePixelRatio||1),W=c.parentElement.clientWidth,H=Math.max(360,Math.min(560,W*.62));c.style.width=W+'px';c.style.height=H+'px';c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);return{c,ctx,W,H,m:{l:54,r:50,t:24,b:44}}}
 function drawChart(a,b,c,P){const g=geom(),{ctx,W,H,m}=g,{Tmin,Tmax,Wmax}=getChartRanges(a,b,c),x=T=>m.l+(T-Tmin)/(Tmax-Tmin)*(W-m.l-m.r),y=w=>H-m.b-w/Wmax*(H-m.t-m.b),ws=T=>{const pv=pws(T);return pv>=P?NaN:wFromPv(pv,P)*1000};ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#dbe3ee';ctx.fillStyle='#64748b';ctx.font='11px system-ui';for(let T=Tmin;T<=Tmax;T+=5){ctx.beginPath();ctx.moveTo(x(T),m.t);ctx.lineTo(x(T),H-m.b);ctx.stroke();ctx.fillText(T,x(T)-7,H-m.b+18)}for(let w=0;w<=Wmax;w+=2){ctx.beginPath();ctx.moveTo(m.l,y(w));ctx.lineTo(W-m.r,y(w));ctx.stroke();ctx.fillText(w,W-m.r+7,y(w)+4)}ctx.strokeStyle='#0f172a';ctx.beginPath();ctx.moveTo(m.l,m.t);ctx.lineTo(m.l,H-m.b);ctx.lineTo(W-m.r,H-m.b);ctx.stroke();ctx.fillStyle='#0f172a';ctx.fillText('DB (°C)',W/2-18,H-10);ctx.save();ctx.translate(W-12,H/2+28);ctx.rotate(-Math.PI/2);ctx.fillText('W (g/kg dry air)',0,0);ctx.restore();ctx.strokeStyle='#2563eb';ctx.lineWidth=2;ctx.beginPath();let st=false;for(let T=Tmin;T<=Tmax;T+=.25){const w=ws(T);if(w>=0&&w<=Wmax){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke();if($('showRH').checked)for(let rh=10;rh<=90;rh+=10){ctx.strokeStyle='rgba(37,99,235,.3)';ctx.lineWidth=1;ctx.beginPath();st=false;for(let T=Tmin;T<=Tmax;T+=.4){const pv=rh/100*pws(T),w=wFromPv(pv,P)*1000;if(w>=0&&w<=Wmax){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke()}if($('showH').checked)for(let h=10;h<=110;h+=10){ctx.strokeStyle='rgba(180,83,9,.25)';ctx.beginPath();st=false;for(let T=Tmin;T<=Tmax;T+=.5){const w=(h-1.006*T)/(2501+1.86*T)*1000;if(w>=0&&w<=Wmax&&w<=ws(T)){st?ctx.lineTo(x(T),y(w)):(ctx.moveTo(x(T),y(w)),st=true)}}ctx.stroke()}if(a&&b){const ax=x(a.db),ay=y(a.w),bx=x(b.db),by=y(b.w);ctx.strokeStyle='#7c3aed';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();const ang=Math.atan2(by-ay,bx-ax),len=10;ctx.fillStyle='#7c3aed';ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx-len*Math.cos(ang-.45),by-len*Math.sin(ang-.45));ctx.lineTo(bx-len*Math.cos(ang+.45),by-len*Math.sin(ang+.45));ctx.closePath();ctx.fill();if(c){const cx=x(c.db),cy=y(c.w);ctx.strokeStyle='#059669';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(cx,cy);ctx.stroke();const ang2=Math.atan2(cy-by,cx-bx);ctx.fillStyle='#059669';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx-len*Math.cos(ang2-.45),cy-len*Math.sin(ang2-.45));ctx.lineTo(cx-len*Math.cos(ang2+.45),cy-len*Math.sin(ang2+.45));ctx.closePath();ctx.fill();}const pts=[[a,'A','#2563eb'],[b,'B','#dc2626']];if(c)pts.push([c,'C','#059669']);for(const [v,label,color] of pts){const px=x(v.db),py=y(v.w);if($('showRefs').checked){ctx.setLineDash([5,4]);ctx.strokeStyle=color;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px,H-m.b);ctx.lineTo(px,py);ctx.lineTo(m.l,py);ctx.stroke();ctx.setLineDash([])}ctx.fillStyle=color;ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 10px system-ui';ctx.fillText(label,px-3.5,py+3.5);g.c.dataset[label+'x']=px;g.c.dataset[label+'y']=py}}}
 function tip(ev){const c=$('psychChart'),r=c.getBoundingClientRect(),sx=(ev.touches?ev.touches[0].clientX:ev.clientX)-r.left,sy=(ev.touches?ev.touches[0].clientY:ev.clientY)-r.top;let chosen=null,label='';for(const L of ['A','B','C']){const px=parseFloat(c.dataset[L+'x']||-999),py=parseFloat(c.dataset[L+'y']||-999);if(Math.hypot(sx-px,sy-py)<30){chosen=L==='A'?lastA:(L==='B'?lastB:lastC);label=L;break}}const t=$('chartTip');if(!chosen){t.style.display='none';return}t.innerHTML=`<strong>${label}</strong><br>DB: ${fmt('db',chosen.db)} °C<br>RH: ${fmt('rh',chosen.rh)} %<br>DP: ${fmt('dp',chosen.dp)} °C<br>WB: ${fmt('wb',chosen.wb)} °C<br>W: ${fmt('w',chosen.w)} g/kg<br>h: ${fmt('h',chosen.h)} kJ/kg`;t.style.display='block';t.style.left=Math.min(r.width-225,Math.max(8,sx+12))+'px';t.style.top=Math.max(8,sy-125)+'px'}
+function setReport(r){
+  if(r){r.inputs=snapshotInputs();r.time=new Date();}
+  lastReport=r;$('exportXlsx').disabled=!r;$('exportPng').disabled=!r;
+}
+function snapshotInputs(){
+  const g=id=>$(id).value,n=id=>parseFloat($(id).value);
+  return {A:[[g('propA1'),n('valueA1')],[g('propA2'),n('valueA2')]],B:[[g('propB1'),n('valueB1')],[g('propB2'),n('valueB2')]],
+    flow:n('airflow'),flowUnit:g('airflowUnit'),basis:g('airflowBasis'),heaterOn:$('heaterEnable').checked,heaterMode:g('heaterMode'),
+    heaterValue:n('heaterValue'),heaterRH:n('heaterRH'),heaterCoilRH:n('heaterCoilRH'),cop:n('cop'),heaterType:g('heaterType')};
+}
+function fileStamp(d){const p=x=>String(x).padStart(2,'0');return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`}
+function downloadBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000)}
+function loadXlsx(){
+  if(window.XLSX)return Promise.resolve(window.XLSX);
+  return new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/xlsx.mini.min.js';s.onload=()=>window.XLSX?res(window.XLSX):rej(new Error('XLSX'));s.onerror=()=>{s.remove();rej(new Error('XLSX'))};document.head.appendChild(s)});
+}
+function xNum(v,d){return isFinite(v)?{t:'n',v,z:d>0?'0.'+'0'.repeat(d):'0'}:'N/A'}
+function buildWorkbook(X,r){
+  const t=i18n[lang],inp=r.inputs,dec={db:2,wb:2,dp:2,rh:2,w:3,h:3,pv:4,v:4,rho:4,ah:3},wb=X.utils.book_new();
+  const add=(name,rows,cols)=>{const ws=X.utils.aoa_to_sheet(rows);ws['!cols']=cols.map(wch=>({wch}));X.utils.book_append_sheet(wb,ws,name)};
+  const head=[[t.title],[t.generated,r.time.toLocaleString(lang==='vi'?'vi-VN':'en-US')],[t.version,APP_VERSION],[]];
+  const pv=([k,v])=>[props[k][lang],xNum(v,dec[k]??2),props[k].unit];
+  const rows=[...head,[t.colParam,t.colValue,t.colUnit],[t.pressure,xNum(r.P,3),'kPa'],
+    [t.stateA],...inp.A.map(pv),[t.stateB],...(r.tMode?[[t.bDerived]]:inp.B.map(pv)),[],
+    [t.airflow,xNum(inp.flow,inp.flowUnit==='cmh'?0:3),inp.flowUnit==='cmh'?'CMH':'m³/s'],
+    [t.airflowBasis,inp.basis==='A'?t.basisA:t.basisB],[],[t.heaterEnable,inp.heaterOn?t.yes:t.no]];
+  if(inp.heaterOn){
+    const mode=inp.heaterMode;
+    rows.push([t.heaterMode,mode==='tc'?t.modeTc:mode==='kw'?t.modeKw:t.modeTarget],
+      [mode==='target'?t.heaterDbTarget:t.heaterValue,xNum(inp.heaterValue,2),mode==='kw'?'kW':'°C']);
+    if(mode==='target')rows.push([t.heaterRH,xNum(inp.heaterRH,1),'%'],[t.heaterCoilRH,xNum(inp.heaterCoilRH,1),'%']);
+  }
+  rows.push([],[t.cop,xNum(inp.cop,2),'—'],[t.heaterType,inp.heaterType==='electric'?t.heaterElectric:t.heaterHotwater]);
+  add(t.sheetInputs,rows,[44,18,14]);
+  const hasC=!!r.c,sHead=[t.colParam,t.colUnit,t.stateA,t.stateB];if(hasC)sHead.push(t.stateCTitle.replace(/\s*\(.*\)$/,''));sHead.push('Δ (B − A)');
+  add(t.sheetStates,[...head,sHead,...order.map(k=>{const d=dec[k]??2,row=[props[k][lang],props[k].unit,xNum(r.a[k],d),xNum(r.b[k],d)];if(hasC)row.push(xNum(r.c[k],d));row.push(xNum(r.b[k]-r.a[k],d));return row})],[30,14,12,12,...(hasC?[14]:[]),12]);
+  const L=r.load,lr=[...head,[t.colItem,t.colValue,t.colUnit],[t.loadTitle],[t.volFlow,xNum(L.Vdot,4),'m³/s'],
+    [t.loadLabels.mda,xNum(L.mda,3),'kg dry air/s'],[t.loadLabels.total,xNum(L.qTotal,2),'kW'],[t.loadLabels.sensible,xNum(L.qSensible,2),'kW'],
+    [t.loadLabels.latent,xNum(L.qLatent,2),'kW'],[t.loadLabels.shr,xNum(L.shr,3),'—'],[t.loadLabels.condensate,xNum(L.condensate,2),'kg/h']];
+  if(hasC)lr.push([],[t.systemTitle],[t.sysLabels.coil,xNum(L.qTotal,2),'kW'],[t.sysLabels.reheat,xNum(r.heaterKw,2),'kW'],[t.sysLabels.sys,xNum(Math.abs(L.qTotal)+Math.abs(r.heaterKw),2),'kW']);
+  add(t.sheetLoads,lr,[40,14,14]);
+  const E=r.elec;
+  add(t.sheetElec,[...head,[t.colItem,t.colValue,t.colUnit],[t.cop,xNum(E.cop,2),'—'],[t.heaterType,E.htype==='electric'?t.heaterElectric:t.heaterHotwater],
+    [t.elecLabels.chiller,xNum(E.chillerE,2),'kW'],[t.elecLabels.heater,xNum(E.heaterE,2),'kW'],[t.elecLabels.total,xNum(E.totalE,2),'kW']],[40,14,10]);
+  add(t.sheetWarn,[...head,[t.colLevel,t.colMessage],...(r.issues.length?r.issues.map(x=>[x.level==='bad'?t.levelBad:t.levelWarn,x.text]):[[t.noWarnings]])],[12,100]);
+  return wb;
+}
+async function exportXlsx(){
+  if(!lastReport)return;
+  let X;try{X=await loadXlsx()}catch(err){alert(i18n[lang].exportLoadFail);return}
+  X.writeFile(buildWorkbook(X,lastReport),`HVAC_Psychro_${fileStamp(lastReport.time)}.xlsx`);
+}
+function exportPng(){
+  if(!lastReport)return;
+  $('psychChart').toBlob(b=>{if(b)downloadBlob(b,`HVAC_Psychro_chart_${fileStamp(new Date())}.png`)},'image/png');
+}
+$('exportXlsx').addEventListener('click',exportXlsx);$('exportPng').addEventListener('click',exportPng);
 for(const s of ['A','B'])for(const i of [1,2])$(`prop${s}${i}`).addEventListener('change',()=>updateUnit(s,i,true));$('language').addEventListener('change',()=>applyLang($('language').value));$('calc').addEventListener('click',calculate);$('reset').addEventListener('click',resetUI);for(const id of ['airflow','airflowUnit','airflowBasis'])$(id).addEventListener('change',calculate);$('heaterEnable').addEventListener('change',()=>{updateHeaterUnit();calculate()});for(const id of ['heaterValue','heaterRH','heaterCoilRH']){$(id).addEventListener('change',calculate);$(id).addEventListener('input',calculate);}$('heaterMode').addEventListener('change',()=>{updateHeaterUnit();calculate()});$('heaterType').addEventListener('change',calculate);$('cop').addEventListener('change',calculate);$('cop').addEventListener('input',calculate);$('psychChart').addEventListener('click',tip);$('psychChart').addEventListener('touchstart',tip,{passive:true});for(const id of ['showRH','showH','showRefs'])$(id).addEventListener('change',()=>drawChart(lastA,lastB,lastC,lastP));window.addEventListener('resize',()=>drawChart(lastA,lastB,lastC,lastP));
-fillOptions();$('propA1').value='db';$('propA2').value='rh';$('valueA1').value=25;$('valueA2').value=60;$('propB1').value='db';$('propB2').value='rh';$('valueB1').value=14;$('valueB2').value=95;for(const s of ['A','B'])for(const i of [1,2])updateUnit(s,i,false);const APP_VERSION="1.0";$('appVersion').textContent=APP_VERSION;document.title="HVAC Psychrometric Calculator v"+APP_VERSION;applyLang('vi');
+fillOptions();$('propA1').value='db';$('propA2').value='rh';$('valueA1').value=25;$('valueA2').value=60;$('propB1').value='db';$('propB2').value='rh';$('valueB1').value=14;$('valueB2').value=95;for(const s of ['A','B'])for(const i of [1,2])updateUnit(s,i,false);const APP_VERSION="1.1";$('appVersion').textContent=APP_VERSION;document.title="HVAC Psychrometric Calculator v"+APP_VERSION;applyLang('vi');
 </script>
 
 <script>
